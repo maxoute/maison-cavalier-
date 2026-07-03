@@ -6,12 +6,16 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:rls": "docker exec -i supabase_db_MAISON-CAVALIER psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f - < supabase/tests/rls.test.sql"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.12.0",
+    "@supabase/supabase-js": "^2.110.0",
     "next": "16.2.10",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -20,6 +24,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
+    "supabase": "^2.109.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

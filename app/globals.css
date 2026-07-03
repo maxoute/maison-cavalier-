@@ -1,26 +1,138 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Palette Maison Cavalier — tokens du prototype client */
+  --navy: #0a1628;
+  --navy-2: #10213c;
+  --navy-3: #16294a;
+  --gold: #b8922a;
+  --gold-light: #d9bc6e;
+  --cream: #f5f3ee;
+  --cream-dark: #e9e4d8;
+  --grey: #8a93a6;
+  --green: #3fa776;
+  --orange: #d98e3b;
+  --red: #c2503f;
+  --violet: #7b5ea7;
+  --blue: #3e6fb8;
+
+  --background: var(--navy);
+  --foreground: var(--cream);
 }
 
 @theme inline {
+  --color-navy: var(--navy);
+  --color-navy-2: var(--navy-2);
+  --color-navy-3: var(--navy-3);
+  --color-gold: var(--gold);
+  --color-gold-light: var(--gold-light);
+  --color-cream: var(--cream);
+  --color-cream-dark: var(--cream-dark);
+  --color-grey: var(--grey);
+  --color-green: var(--green);
+  --color-orange: var(--orange);
+  --color-red: var(--red);
+  --color-violet: var(--violet);
+  --color-blue: var(--blue);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Codes couleur services (PRD §6.1.1 + prototype) */
+  --color-service-chauffeur: var(--blue);
+  --color-service-pressing: var(--green);
+  --color-service-colis: var(--orange);
+  --color-service-billetterie: var(--violet);
+  --color-service-shopper: var(--gold);
+
+  --font-serif: var(--font-lora);
+  --font-sans: var(--font-poppins);
+
+  /* Coins arrondis PRD §10 : 8px cartes, 24px boutons */
+  --radius-card: 8px;
+  --radius-button: 24px;
 }
 
 body {
-  background: var(--background);
+  background: radial-gradient(
+    1200px 600px at 50% -10%,
+    var(--navy-3),
+    var(--navy) 60%
+  );
+  background-color: var(--navy);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 16px; /* WCAG : police >= 16px (PRD §9) */
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-lora), serif;
+  font-weight: 500;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--gold) 35%, transparent);
+  border-radius: 4px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--gold-light);
+  outline-offset: 2px;
+}
+
+/* Grain subtil — évite l'à-plat digital, donne une matière au navy */
+.grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.fade-up {
+  animation: fadeUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-120%) skewX(-15deg);
+  }
+  100% {
+    transform: translateX(220%) skewX(-15deg);
+  }
+}
+
+@keyframes seal-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--gold) 35%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--gold) 0%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

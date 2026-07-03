@@ -1,0 +1,10 @@
+node_modules
+.next
+.git
+.env*
+!.env.production.example
+supabase/.branches
+supabase/.temp
+.playwright-mcp
+*.png
+npm-debug.log*

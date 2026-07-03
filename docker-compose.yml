@@ -1,0 +1,51 @@
+# ============================================================
+# Déploiement Maison Cavalier — https://app.maison-cavalier.com/
+#
+# L'application se connecte à un projet Supabase Cloud (Postgres + RLS,
+# Auth, Realtime, Storage) — voir .env.production.example pour les
+# variables requises. Caddy gère le HTTPS automatique (Let's Encrypt)
+# pour le domaine app.maison-cavalier.com.
+#
+# Usage :
+#   cp .env.production.example .env
+#   # renseigner .env avec les valeurs du projet Supabase
+#   docker compose up -d --build
+# ============================================================
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+    expose:
+      - "3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/login').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+volumes:
+  caddy_data:
+  caddy_config:
