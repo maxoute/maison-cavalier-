@@ -58,7 +58,11 @@ export default async function AdminDashboard() {
   const buildingRows = ((buildings ?? []) as Building[]).map((b) => {
     const bReqs = all.filter((r) => r.building_id === b.id);
     const bOpen = bReqs.filter((r) => r.status !== "termine").length;
-    const bRev = bReqs.reduce((s, r) => s + (r.amount_cents ?? 0), 0);
+    // Même définition que le KPI global (services terminés) : sinon la somme
+    // des lignes ne retombe pas sur le chiffre affiché en haut de page.
+    const bRev = bReqs
+      .filter((r) => r.status === "termine")
+      .reduce((s, r) => s + (r.amount_cents ?? 0), 0);
     return { building: b, open: bOpen, revenue: bRev, total: bReqs.length };
   });
 
@@ -140,7 +144,10 @@ export default async function AdminDashboard() {
                 </span>
                 <span className="font-serif text-cream text-[14px]">
                   {(bRev / 100).toLocaleString("fr-FR")} €
-                  <span className="text-grey text-[9px] font-sans"> total</span>
+                  <span className="text-grey text-[9px] font-sans">
+                    {" "}
+                    réalisés
+                  </span>
                 </span>
                 <SwitchBuildingButton
                   buildingId={b.id}

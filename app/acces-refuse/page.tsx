@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { signOut } from "@/app/actions/auth";
 
 export default function AccessDeniedPage() {
   return (
@@ -12,9 +12,16 @@ export default function AccessDeniedPage() {
           Votre compte ne permet pas d&apos;accéder à cette section. Les
           résidents et chauffeurs utilisent les applications mobiles dédiées.
         </p>
-        <Link href="/login" className="text-gold underline underline-offset-4">
-          Retour à la connexion
-        </Link>
+        {/* Déconnexion et non simple lien vers /login : le proxy y renverrait
+            l'utilisateur connecté sur cette même page (impasse). */}
+        <form action={signOut}>
+          <button
+            type="submit"
+            className="text-gold underline underline-offset-4 cursor-pointer"
+          >
+            Se déconnecter
+          </button>
+        </form>
       </div>
     </main>
   );

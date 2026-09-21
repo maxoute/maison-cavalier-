@@ -14,7 +14,12 @@
 insert into public.buildings (id, name, address, b2b_plan) values
   ('11111111-1111-1111-1111-111111111111', 'Le Marly', '12 avenue Montaigne, 75008 Paris', 'signature'),
   ('22222222-2222-2222-2222-222222222222', 'Villa Ségur', '4 avenue de Ségur, 75007 Paris', 'essentiel'),
-  ('33333333-3333-3333-3333-333333333333', 'Hôtel Malesherbes', '3 boulevard Malesherbes, 75008 Paris', 'premium');
+  ('33333333-3333-3333-3333-333333333333', 'Hôtel Malesherbes', '3 boulevard Malesherbes, 75008 Paris', 'premium'),
+  ('44444444-4444-4444-4444-444444444444', 'Hôtel de Marigny', '25 rue du Faubourg Saint-Honoré, 75008 Paris', 'signature'),
+  ('55555555-5555-5555-5555-555555555555', 'Résidence Foch', '8 avenue Foch, 75116 Paris', 'premium'),
+  ('66666666-6666-6666-6666-666666666666', 'Le Trocadéro', '15 avenue Raymond Poincaré, 75116 Paris', 'essentiel'),
+  ('77777777-7777-7777-7777-777777777777', 'Villa Montsouris', '22 rue Nansouty, 75014 Paris', 'essentiel'),
+  ('88888888-8888-8888-8888-888888888888', 'Hôtel particulier Varenne', '40 rue de Varenne, 75007 Paris', 'premium');
 
 -- ---------- Utilisateurs auth ----------
 -- app_metadata porte role + building_id (lisibles par les policies RLS,
@@ -105,6 +110,45 @@ insert into public.residents (id, building_id, full_name, email, phone, floor, u
   ('dddddddd-0000-0000-0000-000000000007', '33333333-3333-3333-3333-333333333333', 'Otto Bergman',     'o.bergman@example.com',  '+33698765607', '5', '5B', 'proprietaire', 'Billetterie événements sportifs.', null, null, 4.30),
   ('dddddddd-0000-0000-0000-000000000008', '33333333-3333-3333-3333-333333333333', 'Léna Duchâteau',   'l.duchateau@example.com','+33698765608', '3', '3B', 'locataire',    null, null, null, 4.05);
 
+-- ---------- Résidents (Hôtel de Marigny, 5) ----------
+insert into public.residents (id, building_id, full_name, email, phone, floor, unit, owner_status, preferences, satisfaction_score) values
+  ('eeeeeeee-0000-0000-0000-000000000001', '44444444-4444-4444-4444-444444444444', 'Astrid Lindqvist',   'a.lindqvist@example.com', '+33698765701', '4', '4A', 'proprietaire', 'Fleuriste hebdomadaire.',                 4.70),
+  ('eeeeeeee-0000-0000-0000-000000000002', '44444444-4444-4444-4444-444444444444', 'Bertrand Achille',   'b.achille@example.com',   '+33698765702', '2', '2B', 'locataire',    null,                                       4.10),
+  ('eeeeeeee-0000-0000-0000-000000000003', '44444444-4444-4444-4444-444444444444', 'Clémence Duroy',     'c.duroy@example.com',     '+33698765703', '5', '5A', 'proprietaire', 'Chauffeur quotidien vers Roissy.',         4.85),
+  ('eeeeeeee-0000-0000-0000-000000000004', '44444444-4444-4444-4444-444444444444', 'Younes El Fassi',    'y.elfassi@example.com',   '+33698765704', '3', '3C', 'locataire',    null,                                       null),
+  ('eeeeeeee-0000-0000-0000-000000000005', '44444444-4444-4444-4444-444444444444', 'Solène Marchetti',   's.marchetti@example.com', '+33698765705', '1', '1A', 'proprietaire', 'Personal shopper haute joaillerie.',      4.95);
+
+-- ---------- Résidents (Résidence Foch, 6) ----------
+insert into public.residents (id, building_id, full_name, email, phone, floor, unit, owner_status, preferences, satisfaction_score) values
+  ('ffffffff-0000-0000-0000-000000000001', '55555555-5555-5555-5555-555555555555', 'Grégoire Vandenberghe','g.vandenberghe@example.com', '+33698765801', '6', '6A', 'proprietaire', 'Voiturier quotidien.',              4.60),
+  ('ffffffff-0000-0000-0000-000000000002', '55555555-5555-5555-5555-555555555555', 'Hortense Delaroche', 'h.delaroche@example.com', '+33698765802', '2', '2A', 'proprietaire', 'Billetterie opéra récurrente.',           5.00),
+  ('ffffffff-0000-0000-0000-000000000003', '55555555-5555-5555-5555-555555555555', 'Ibrahim Toure',      'i.toure@example.com',     '+33698765803', '4', '4B', 'locataire',    null,                                       4.20),
+  ('ffffffff-0000-0000-0000-000000000004', '55555555-5555-5555-5555-555555555555', 'Juliette Sarfati',   'j.sarfati@example.com',   '+33698765804', '3', '3A', 'proprietaire', 'Pressing haute couture.',                  4.75),
+  ('ffffffff-0000-0000-0000-000000000005', '55555555-5555-5555-5555-555555555555', 'Kléber Fontanet',    'k.fontanet@example.com',  '+33698765805', '1', '1B', 'locataire',    null,                                       3.90),
+  ('ffffffff-0000-0000-0000-000000000006', '55555555-5555-5555-5555-555555555555', 'Léonore Vasseur',    'l.vasseur@example.com',   '+33698765806', '5', '5B', 'proprietaire', 'Chauffeur aéroport, voyages fréquents.',  4.55);
+
+-- ---------- Résidents (Le Trocadéro, 4 — plan essentiel, activité modérée) ----------
+insert into public.residents (id, building_id, full_name, email, phone, floor, unit, owner_status) values
+  ('a1a1a1a1-0000-0000-0000-000000000001', '66666666-6666-6666-6666-666666666666', 'Maxime Lécuyer',   'm.lecuyer@example.com',  '+33698765901', '1', '1A', 'proprietaire'),
+  ('a1a1a1a1-0000-0000-0000-000000000002', '66666666-6666-6666-6666-666666666666', 'Nathalie Prévost', 'n.prevost@example.com',  '+33698765902', '2', '2A', 'locataire'),
+  ('a1a1a1a1-0000-0000-0000-000000000003', '66666666-6666-6666-6666-666666666666', 'Olivier Ténot',    'o.tenot@example.com',    '+33698765903', '3', '3A', 'proprietaire'),
+  ('a1a1a1a1-0000-0000-0000-000000000004', '66666666-6666-6666-6666-666666666666', 'Priscille Aumont', 'p.aumont@example.com',   '+33698765904', '1', '1B', 'locataire');
+
+-- ---------- Résidents (Villa Montsouris, 4 — plan essentiel) ----------
+insert into public.residents (id, building_id, full_name, email, phone, floor, unit, owner_status) values
+  ('b2b2b2b2-0000-0000-0000-000000000001', '77777777-7777-7777-7777-777777777777', 'Quentin Roussille', 'q.roussille@example.com', '+33698766001', '1', '1A', 'proprietaire'),
+  ('b2b2b2b2-0000-0000-0000-000000000002', '77777777-7777-7777-7777-777777777777', 'Rania Benslimane',  'r.benslimane@example.com','+33698766002', '2', '2A', 'locataire'),
+  ('b2b2b2b2-0000-0000-0000-000000000003', '77777777-7777-7777-7777-777777777777', 'Sixte Delorme',     's.delorme@example.com',  '+33698766003', '2', '2B', 'proprietaire'),
+  ('b2b2b2b2-0000-0000-0000-000000000004', '77777777-7777-7777-7777-777777777777', 'Tatiana Orlova',    't.orlova@example.com',   '+33698766004', '3', '3A', 'locataire');
+
+-- ---------- Résidents (Hôtel particulier Varenne, 5) ----------
+insert into public.residents (id, building_id, full_name, email, phone, floor, unit, owner_status, preferences, satisfaction_score) values
+  ('c3c3c3c3-0000-0000-0000-000000000001', '88888888-8888-8888-8888-888888888888', 'Ursule d''Estaing',  'u.destaing@example.com', '+33698766101', '2', '2A', 'proprietaire', 'Réceptions privées fréquentes.',        4.90),
+  ('c3c3c3c3-0000-0000-0000-000000000002', '88888888-8888-8888-8888-888888888888', 'Victor Anh Nguyen',  'v.nguyen@example.com',   '+33698766102', '1', '1A', 'locataire',    null,                                     4.30),
+  ('c3c3c3c3-0000-0000-0000-000000000003', '88888888-8888-8888-8888-888888888888', 'Wilhelmine Coste',   'w.coste@example.com',    '+33698766103', '3', '3B', 'proprietaire', 'Personal shopper art contemporain.',    4.80),
+  ('c3c3c3c3-0000-0000-0000-000000000004', '88888888-8888-8888-8888-888888888888', 'Xavier Delannoy',    'x.delannoy@example.com', '+33698766104', '1', '1B', 'locataire',    null,                                     4.05),
+  ('c3c3c3c3-0000-0000-0000-000000000005', '88888888-8888-8888-8888-888888888888', 'Yasmine Berrada',    'y.berrada@example.com',  '+33698766105', '2', '2C', 'proprietaire', 'Chauffeur quotidien, discrétion requise.', 4.65);
+
 -- ---------- Demandes de service (Le Marly, 14) ----------
 insert into public.service_requests (building_id, resident_id, service, status, priority, payload, amount_cents, sla_deadline) values
   ('11111111-1111-1111-1111-111111111111', 'bbbbbbbb-0000-0000-0000-000000000001', 'pressing',          'en_cours',   'normale', '{"articles": "3 costumes, 5 chemises"}',            8500,  now() + interval '4 hours'),
@@ -132,6 +176,73 @@ insert into public.service_requests (building_id, resident_id, service, status, 
   ('33333333-3333-3333-3333-333333333333', 'dddddddd-0000-0000-0000-000000000004', 'chauffeur',         'termine',    'normale', '{"destination": "Gare Montparnasse"}',                5500,  null),
   ('33333333-3333-3333-3333-333333333333', 'dddddddd-0000-0000-0000-000000000008', 'pressing',          'termine',    'normale', '{"articles": "4 chemises, 1 tailleur"}',              4000,  null),
   ('33333333-3333-3333-3333-333333333333', 'dddddddd-0000-0000-0000-000000000006', 'colis',             'nouveau',    'normale', '{"transporteur": "Colissimo", "reference": "IV003"}',null,  now() + interval '2 days');
+
+-- ---------- Demandes de service (Hôtel de Marigny, 9) ----------
+insert into public.service_requests (building_id, resident_id, service, status, priority, payload, amount_cents, sla_deadline) values
+  ('44444444-4444-4444-4444-444444444444', 'eeeeeeee-0000-0000-0000-000000000003', 'chauffeur',        'nouveau',    'urgente', '{"destination": "Aéroport Roissy CDG"}',              13500, now() + interval '25 minutes'),
+  ('44444444-4444-4444-4444-444444444444', 'eeeeeeee-0000-0000-0000-000000000001', 'colis',            'en_cours',   'normale', '{"transporteur": "Chronopost", "reference": "HM102"}',null,  now() + interval '3 hours'),
+  ('44444444-4444-4444-4444-444444444444', 'eeeeeeee-0000-0000-0000-000000000005', 'personal_shopper', 'en_attente', 'normale', '{"mission": "Sélection joaillerie printemps"}',       98000, now() + interval '1 day'),
+  ('44444444-4444-4444-4444-444444444444', 'eeeeeeee-0000-0000-0000-000000000002', 'pressing',         'termine',    'normale', '{"articles": "6 chemises, 2 costumes"}',              9000,  null),
+  ('44444444-4444-4444-4444-444444444444', 'eeeeeeee-0000-0000-0000-000000000004', 'billetterie',      'nouveau',    'normale', '{"evenement": "Comédie-Française"}',                  32000, now() + interval '2 days'),
+  ('44444444-4444-4444-4444-444444444444', 'eeeeeeee-0000-0000-0000-000000000003', 'colis',            'termine',    'normale', '{"transporteur": "DHL", "reference": "HM088"}',       null,  null),
+  ('44444444-4444-4444-4444-444444444444', 'eeeeeeee-0000-0000-0000-000000000001', 'chauffeur',        'termine',    'normale', '{"destination": "Gare du Nord"}',                     6500,  null),
+  ('44444444-4444-4444-4444-444444444444', 'eeeeeeee-0000-0000-0000-000000000005', 'pressing',         'en_cours',   'normale', '{"articles": "Robe de soirée"}',                      7200,  now() + interval '5 hours'),
+  ('44444444-4444-4444-4444-444444444444', 'eeeeeeee-0000-0000-0000-000000000002', 'billetterie',      'en_attente', 'normale', '{"evenement": "Roland-Garros, court 1"}',             25000, now() + interval '4 days');
+
+-- ---------- Demandes de service (Résidence Foch, 10) ----------
+insert into public.service_requests (building_id, resident_id, service, status, priority, payload, amount_cents, sla_deadline) values
+  ('55555555-5555-5555-5555-555555555555', 'ffffffff-0000-0000-0000-000000000001', 'chauffeur',        'en_cours',   'normale', '{"destination": "La Défense"}',                       8800,  now() + interval '2 hours'),
+  ('55555555-5555-5555-5555-555555555555', 'ffffffff-0000-0000-0000-000000000002', 'billetterie',      'nouveau',    'urgente', '{"evenement": "Opéra Garnier, ce soir"}',             75000, now() - interval '10 minutes'),
+  ('55555555-5555-5555-5555-555555555555', 'ffffffff-0000-0000-0000-000000000004', 'pressing',         'termine',    'normale', '{"articles": "Tailleurs sur-mesure x3"}',             11000, null),
+  ('55555555-5555-5555-5555-555555555555', 'ffffffff-0000-0000-0000-000000000003', 'colis',            'en_attente', 'normale', '{"transporteur": "UPS", "reference": "RF221"}',       null,  now() + interval '2 days'),
+  ('55555555-5555-5555-5555-555555555555', 'ffffffff-0000-0000-0000-000000000006', 'chauffeur',        'nouveau',    'normale', '{"destination": "Aéroport du Bourget"}',              15000, now() + interval '1 day'),
+  ('55555555-5555-5555-5555-555555555555', 'ffffffff-0000-0000-0000-000000000005', 'colis',            'termine',    'normale', '{"transporteur": "Colissimo", "reference": "RF199"}', null,  null),
+  ('55555555-5555-5555-5555-555555555555', 'ffffffff-0000-0000-0000-000000000001', 'personal_shopper', 'en_cours',   'normale', '{"mission": "Cadeau anniversaire"}',                  44000, now() + interval '6 hours'),
+  ('55555555-5555-5555-5555-555555555555', 'ffffffff-0000-0000-0000-000000000002', 'billetterie',      'termine',    'normale', '{"evenement": "PSG - Marseille"}',                    62000, null),
+  ('55555555-5555-5555-5555-555555555555', 'ffffffff-0000-0000-0000-000000000004', 'pressing',         'nouveau',    'normale', '{"articles": "Linge de maison"}',                     5000,  now() + interval '1 day'),
+  ('55555555-5555-5555-5555-555555555555', 'ffffffff-0000-0000-0000-000000000006', 'chauffeur',        'termine',    'normale', '{"destination": "Gare de Lyon"}',                     6900,  null);
+
+-- ---------- Demandes de service (Le Trocadéro, 5) ----------
+insert into public.service_requests (building_id, resident_id, service, status, priority, payload, amount_cents, sla_deadline) values
+  ('66666666-6666-6666-6666-666666666666', 'a1a1a1a1-0000-0000-0000-000000000001', 'colis',     'en_cours',   'normale', '{"transporteur": "Colissimo", "reference": "TR045"}', null,  now() + interval '4 hours'),
+  ('66666666-6666-6666-6666-666666666666', 'a1a1a1a1-0000-0000-0000-000000000002', 'pressing',  'termine',    'normale', '{"articles": "3 chemises"}',                          4500,  null),
+  ('66666666-6666-6666-6666-666666666666', 'a1a1a1a1-0000-0000-0000-000000000003', 'chauffeur', 'nouveau',    'urgente', '{"destination": "Aéroport Orly"}',                    9800,  now() + interval '40 minutes'),
+  ('66666666-6666-6666-6666-666666666666', 'a1a1a1a1-0000-0000-0000-000000000004', 'colis',     'termine',    'normale', '{"transporteur": "DHL", "reference": "TR012"}',       null,  null),
+  ('66666666-6666-6666-6666-666666666666', 'a1a1a1a1-0000-0000-0000-000000000001', 'pressing',  'en_attente', 'normale', '{"articles": "Costume 2 pièces"}',                    5200,  now() + interval '1 day');
+
+-- ---------- Demandes de service (Villa Montsouris, 4) ----------
+insert into public.service_requests (building_id, resident_id, service, status, priority, payload, amount_cents, sla_deadline) values
+  ('77777777-7777-7777-7777-777777777777', 'b2b2b2b2-0000-0000-0000-000000000001', 'chauffeur', 'termine',    'normale', '{"destination": "Gare Montparnasse"}',                6000,  null),
+  ('77777777-7777-7777-7777-777777777777', 'b2b2b2b2-0000-0000-0000-000000000002', 'colis',     'en_attente', 'normale', '{"transporteur": "Colissimo", "reference": "VM077"}', null,  now() + interval '2 days'),
+  ('77777777-7777-7777-7777-777777777777', 'b2b2b2b2-0000-0000-0000-000000000003', 'pressing',  'termine',    'normale', '{"articles": "4 chemises"}',                          4000,  null),
+  ('77777777-7777-7777-7777-777777777777', 'b2b2b2b2-0000-0000-0000-000000000004', 'chauffeur', 'nouveau',    'normale', '{"destination": "Aéroport Orly"}',                    9200,  now() + interval '1 day');
+
+-- ---------- Demandes de service (Hôtel particulier Varenne, 9) ----------
+insert into public.service_requests (building_id, resident_id, service, status, priority, payload, amount_cents, sla_deadline) values
+  ('88888888-8888-8888-8888-888888888888', 'c3c3c3c3-0000-0000-0000-000000000001', 'personal_shopper', 'en_cours',   'normale', '{"mission": "Réception privée, décoration florale"}', 68000, now() + interval '3 hours'),
+  ('88888888-8888-8888-8888-888888888888', 'c3c3c3c3-0000-0000-0000-000000000003', 'billetterie',      'nouveau',    'normale', '{"evenement": "Vernissage Grand Palais"}',            18000, now() + interval '2 days'),
+  ('88888888-8888-8888-8888-888888888888', 'c3c3c3c3-0000-0000-0000-000000000005', 'chauffeur',        'nouveau',    'urgente', '{"destination": "Aéroport du Bourget"}',              14500, now() - interval '5 minutes'),
+  ('88888888-8888-8888-8888-888888888888', 'c3c3c3c3-0000-0000-0000-000000000002', 'colis',            'termine',    'normale', '{"transporteur": "FedEx", "reference": "HV033"}',     null,  null),
+  ('88888888-8888-8888-8888-888888888888', 'c3c3c3c3-0000-0000-0000-000000000004', 'pressing',         'termine',    'normale', '{"articles": "5 chemises, 1 costume"}',               7500,  null),
+  ('88888888-8888-8888-8888-888888888888', 'c3c3c3c3-0000-0000-0000-000000000001', 'chauffeur',        'en_cours',   'normale', '{"destination": "Opéra Garnier"}',                    7000,  now() + interval '5 hours'),
+  ('88888888-8888-8888-8888-888888888888', 'c3c3c3c3-0000-0000-0000-000000000003', 'personal_shopper', 'termine',    'normale', '{"mission": "Acquisition tableau contemporain"}',     185000,null),
+  ('88888888-8888-8888-8888-888888888888', 'c3c3c3c3-0000-0000-0000-000000000005', 'colis',            'en_attente', 'normale', '{"transporteur": "UPS", "reference": "HV054"}',       null,  now() + interval '2 days'),
+  ('88888888-8888-8888-8888-888888888888', 'c3c3c3c3-0000-0000-0000-000000000002', 'billetterie',      'termine',    'normale', '{"evenement": "Théâtre des Champs-Élysées"}',         21000, null);
+
+-- ---------- Devis (Hôtel de Marigny, 2) ----------
+insert into public.quotes (building_id, resident_id, provider, label, amount_cents, status) values
+  ('44444444-4444-4444-4444-444444444444', 'eeeeeeee-0000-0000-0000-000000000005', 'Agence Style & Co',        'Personal Shopper — sélection joaillerie',    195000, 'envoye'),
+  ('44444444-4444-4444-4444-444444444444', 'eeeeeeee-0000-0000-0000-000000000001', 'Cavalier Fleet Premium',   'Chauffeur — abonnement mensuel',             340000, 'accepte');
+
+-- ---------- Devis (Résidence Foch, 2) ----------
+insert into public.quotes (building_id, resident_id, provider, label, amount_cents, status) values
+  ('55555555-5555-5555-5555-555555555555', 'ffffffff-0000-0000-0000-000000000002', 'Fnac Spectacles Pro',      'Billetterie — abonnement Opéra Garnier',     260000, 'en_attente'),
+  ('55555555-5555-5555-5555-555555555555', 'ffffffff-0000-0000-0000-000000000004', 'Blanchisserie du Faubourg','Pressing — forfait trimestriel sur-mesure',  36000,  'accepte');
+
+-- ---------- Devis (Hôtel particulier Varenne, 2) ----------
+insert into public.quotes (building_id, resident_id, provider, label, amount_cents, status) values
+  ('88888888-8888-8888-8888-888888888888', 'c3c3c3c3-0000-0000-0000-000000000003', 'Maison Artcurial Conseil', 'Personal Shopper — acquisitions art contemporain', 450000, 'accepte'),
+  ('88888888-8888-8888-8888-888888888888', 'c3c3c3c3-0000-0000-0000-000000000001', 'Agence Style & Co',        'Personal Shopper — événementiel privé',            120000, 'envoye');
 
 -- ---------- Devis (Le Marly, 5) ----------
 insert into public.quotes (building_id, resident_id, provider, label, amount_cents, status) values
@@ -167,3 +278,238 @@ insert into public.notifications (building_id, recipient_resident_id, event, cha
   ('11111111-1111-1111-1111-111111111111', 'bbbbbbbb-0000-0000-0000-000000000009', 'chauffeur_en_route',  'push',     '{"title": "Votre chauffeur arrive"}',                 now() - interval '1 hour'),
   ('11111111-1111-1111-1111-111111111111', 'bbbbbbbb-0000-0000-0000-000000000003', 'colis_recu',          'whatsapp', '{"title": "Un colis vous attend à la loge"}',         now() - interval '2 days'),
   ('11111111-1111-1111-1111-111111111111', 'bbbbbbbb-0000-0000-0000-000000000004', 'offre_billetterie',   'email',    '{"title": "Loge PSG disponible ce week-end"}',        now() - interval '5 days');
+
+-- ============================================================
+-- Génération de volume additionnel — pour démo client (beaucoup
+-- plus de données sur tous les immeubles, y compris Villa Ségur).
+-- ============================================================
+do $$
+declare
+  b record;
+  first_names text[] := array['Alice','Antoine','Béatrice','Charles','Claire','Damien','Elise','Fabien',
+    'Gabrielle','Hugo','Inès','Julien','Karim','Laure','Mathieu','Nadège','Octave','Pauline','Quentin',
+    'Rosalie','Simon','Théo','Ursule','Valentine','William','Zoé','Adrien','Camille','Delphine','Étienne',
+    'Florence','Guillaume','Héloïse','Igor','Joséphine','Kevin','Lucie','Marc','Noémie','Oscar','Perrine',
+    'Rodolphe','Sabine','Timothée','Violette','Xavier','Yolande','Zacharie','Agathe','Bastien','Constance'];
+  last_names text[] := array['Dupont','Martin','Bernard','Petit','Durand','Leroy','Moreau','Simon','Laurent',
+    'Lefebvre','Michel','Garcia','David','Bertrand','Roux','Vincent','Fournier','Morel','Girard','Bonnet',
+    'Dupuis','Lambert','Fontaine','Rousseau','Blanchard','Guerin','Muller','Henry','Roussel','Nicolas',
+    'Perrin','Robin','Clement','Morin','Gauthier','Dumont','Marchand','Noel','Meyer','Faure','Andre'];
+  services service_type[] := array['chauffeur','pressing','colis','billetterie','personal_shopper']::service_type[];
+  statuses request_status[] := array['nouveau','en_cours','en_attente','termine']::request_status[];
+  floors text[] := array['1','2','3','4','5','6'];
+  units text[] := array['A','B','C','D'];
+  fn text;
+  ln text;
+  svc service_type;
+  descr text;
+  target_resident uuid;
+  i int;
+begin
+  for b in select id from public.buildings loop
+    -- 15 résidents supplémentaires par immeuble
+    for i in 1..15 loop
+      fn := first_names[1 + floor(random()*array_length(first_names,1))::int];
+      ln := last_names[1 + floor(random()*array_length(last_names,1))::int];
+      insert into public.residents (id, building_id, full_name, email, phone, floor, unit, owner_status, satisfaction_score)
+      values (
+        gen_random_uuid(), b.id,
+        fn || ' ' || ln,
+        lower(left(fn, 1) || '.' || ln) || '@example.com',
+        '+336' || lpad(floor(random()*100000000)::text, 8, '0'),
+        floors[1 + floor(random()*array_length(floors,1))::int],
+        floors[1 + floor(random()*array_length(floors,1))::int] || units[1 + floor(random()*array_length(units,1))::int],
+        (array['proprietaire','locataire']::owner_status[])[1 + floor(random()*2)::int],
+        round((3.5 + random()*1.5)::numeric, 2)
+      );
+    end loop;
+
+    -- 30 demandes de service supplémentaires par immeuble
+    for i in 1..30 loop
+      select id into target_resident from public.residents where building_id = b.id order by random() limit 1;
+      svc := services[1 + floor(random()*5)::int];
+      descr := case svc
+        when 'chauffeur' then (array['Aéroport CDG','Aéroport Orly','Aéroport du Bourget','Gare de Lyon','Gare du Nord','La Défense','Rendez-vous centre-ville'])[1 + floor(random()*7)::int]
+        when 'pressing' then (array['3 chemises','Costume 2 pièces','Robe de soirée','Linge de maison','Tailleur sur-mesure','5 chemises, 1 costume'])[1 + floor(random()*6)::int]
+        when 'colis' then (array['Colissimo','DHL','UPS','FedEx','Chronopost'])[1 + floor(random()*5)::int] || ' — réf ' || upper(left(md5(random()::text), 6))
+        when 'billetterie' then (array['Opéra Garnier','Opéra Bastille','Roland-Garros','PSG - OM','Comédie-Française','Théâtre des Champs-Élysées'])[1 + floor(random()*6)::int]
+        else (array['Sélection joaillerie','Garde-robe saison','Cadeau anniversaire','Acquisition art','Personal shopper événementiel'])[1 + floor(random()*5)::int]
+      end;
+      insert into public.service_requests (building_id, resident_id, service, status, priority, payload, amount_cents, sla_deadline)
+      values (
+        b.id, target_resident, svc,
+        statuses[1 + floor(random()*4)::int],
+        case when random() < 0.15 then 'urgente'::request_priority else 'normale'::request_priority end,
+        jsonb_build_object('detail', descr),
+        case when random() < 0.75 then (2000 + floor(random()*90000))::int else null end,
+        case when random() < 0.5 then now() + (floor(random()*96) || ' hours')::interval
+             else now() - (floor(random()*48) || ' hours')::interval end
+      );
+    end loop;
+
+    -- 3 devis supplémentaires par immeuble
+    for i in 1..3 loop
+      select id into target_resident from public.residents where building_id = b.id order by random() limit 1;
+      insert into public.quotes (building_id, resident_id, provider, label, amount_cents, status)
+      values (
+        b.id, target_resident,
+        (array['Blanchisserie du Faubourg','Agence Style & Co','Fnac Spectacles Pro','Cavalier Fleet Premium','Maison Artcurial Conseil'])[1 + floor(random()*5)::int],
+        (array['Forfait trimestriel sur-mesure','Sélection joaillerie','Abonnement transferts aéroport','Loge saison, places premium','Garde-robe collection'])[1 + floor(random()*5)::int],
+        (15000 + floor(random()*400000))::int,
+        (array['en_attente','envoye','accepte','refuse']::quote_status[])[1 + floor(random()*4)::int]
+      );
+    end loop;
+  end loop;
+end;
+$$;
+
+-- ============================================================
+-- Opérationnel : chat WhatsApp, colis, pressing, recommandations,
+-- devis reçus par e-mail (migration 20260831000001).
+-- Ids fixes sur Le Marly pour que la démo soit reproductible ; les autres
+-- immeubles sont garnis dynamiquement pour éprouver l'isolation.
+-- ============================================================
+
+-- ---------- Fils WhatsApp (Le Marly) ----------
+insert into public.conversations (id, building_id, resident_id, channel, external_thread_id, status, assigned_profile_id, last_read_at, created_at) values
+  ('cccc0000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'bbbbbbbb-0000-0000-0000-000000000001', 'whatsapp', 'wa:33698765401', 'ouverte',   'aaaaaaaa-0000-0000-0000-000000000001', now() - interval '3 hours', now() - interval '40 days'),
+  ('cccc0000-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111', 'bbbbbbbb-0000-0000-0000-000000000002', 'whatsapp', 'wa:33698765402', 'en_attente','aaaaaaaa-0000-0000-0000-000000000001', now() - interval '2 days',  now() - interval '35 days'),
+  ('cccc0000-0000-0000-0000-000000000003', '11111111-1111-1111-1111-111111111111', 'bbbbbbbb-0000-0000-0000-000000000004', 'whatsapp', 'wa:33698765404', 'ouverte',   'aaaaaaaa-0000-0000-0000-000000000001', now() - interval '1 day',   now() - interval '20 days'),
+  ('cccc0000-0000-0000-0000-000000000004', '11111111-1111-1111-1111-111111111111', 'bbbbbbbb-0000-0000-0000-000000000003', 'whatsapp', 'wa:33698765403', 'resolue',   'aaaaaaaa-0000-0000-0000-000000000001', now() - interval '6 days',  now() - interval '60 days');
+
+-- `created_at` explicite : le trigger messages_touch_conversation recalcule
+-- ensuite last_message_at à partir de ces valeurs.
+insert into public.messages (building_id, conversation_id, direction, sender_profile_id, body, external_message_id, delivery_status, created_at) values
+  ('11111111-1111-1111-1111-111111111111', 'cccc0000-0000-0000-0000-000000000001', 'entrant', null,                                    'Bonjour Jules, pouvez-vous récupérer mon costume au pressing avant vendredi ?', 'wamid.0001', 'lu',    now() - interval '5 hours'),
+  ('11111111-1111-1111-1111-111111111111', 'cccc0000-0000-0000-0000-000000000001', 'sortant', 'aaaaaaaa-0000-0000-0000-000000000001', 'Bonjour Monsieur Dubois, c''est noté. Collecte demain 9h, retour prévu jeudi soir.', 'wamid.0002', 'lu', now() - interval '4 hours 50 minutes'),
+  ('11111111-1111-1111-1111-111111111111', 'cccc0000-0000-0000-0000-000000000001', 'entrant', null,                                    'Parfait, merci beaucoup.', 'wamid.0003', 'lu', now() - interval '4 hours 30 minutes'),
+  ('11111111-1111-1111-1111-111111111111', 'cccc0000-0000-0000-0000-000000000002', 'entrant', null,                                    'Un colis est-il arrivé pour moi aujourd''hui ?', 'wamid.0004', 'livre', now() - interval '3 hours'),
+  ('11111111-1111-1111-1111-111111111111', 'cccc0000-0000-0000-0000-000000000003', 'entrant', null,                                    'Auriez-vous une adresse pour un dîner jeudi, plutôt discret ?', 'wamid.0005', 'lu', now() - interval '1 day 2 hours'),
+  ('11111111-1111-1111-1111-111111111111', 'cccc0000-0000-0000-0000-000000000003', 'sortant', 'aaaaaaaa-0000-0000-0000-000000000001', 'Je vous recommande Le Petit Marius, avenue George V — je peux réserver pour deux à 20h30.', 'wamid.0006', 'lu', now() - interval '1 day 1 hour'),
+  ('11111111-1111-1111-1111-111111111111', 'cccc0000-0000-0000-0000-000000000003', 'entrant', null,                                    'Volontiers, réservez.', 'wamid.0007', 'lu', now() - interval '23 hours'),
+  ('11111111-1111-1111-1111-111111111111', 'cccc0000-0000-0000-0000-000000000004', 'sortant', 'aaaaaaaa-0000-0000-0000-000000000001', 'Votre colis volumineux est descendu en cave, badge n°12. Bonne journée.', 'wamid.0008', 'lu', now() - interval '6 days');
+
+-- ---------- Colis (Le Marly) ----------
+insert into public.parcels (id, building_id, resident_id, carrier, tracking_code, status, storage_location, photo_path, received_at, scheduled_delivery_at, delivered_at, reminder_sent_at, notes) values
+  ('dddd0000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'bbbbbbbb-0000-0000-0000-000000000002', 'Chronopost', 'XP4471203FR', 'recu',     'Loge — étagère A', 'parcels/marly/xp4471203.jpg', now() - interval '3 hours', null,                        null,                      null,                      'Colis fragile, signature demandée.'),
+  ('dddd0000-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111', 'bbbbbbbb-0000-0000-0000-000000000003', 'DHL',        'JJD0002299134', 'stocke',   'Cave n°12',       'parcels/marly/jjd0002299.jpg', now() - interval '4 days',  now() + interval '1 day',   null,                      now() - interval '2 days', 'Volumineux — descendu en cave.'),
+  ('dddd0000-0000-0000-0000-000000000003', '11111111-1111-1111-1111-111111111111', 'bbbbbbbb-0000-0000-0000-000000000004', 'UPS',        '1Z999AA10123456784', 'notifie', 'Loge — étagère B', null,                        now() - interval '1 day',   now() + interval '2 hours', null,                      null,                      null),
+  ('dddd0000-0000-0000-0000-000000000004', '11111111-1111-1111-1111-111111111111', 'bbbbbbbb-0000-0000-0000-000000000001', 'Colissimo',  '6A11223344556',  'remis',    null,              'parcels/marly/6a1122334.jpg', now() - interval '8 days',  null,                       now() - interval '7 days', null,                      null),
+  ('dddd0000-0000-0000-0000-000000000005', '11111111-1111-1111-1111-111111111111', 'bbbbbbbb-0000-0000-0000-000000000007', 'Amazon',     'TBA304991827',   'stocke',   'Loge — étagère A', null,                        now() - interval '5 days',  null,                       null,                      now() - interval '3 days', 'Rappel J+2 envoyé, sans réponse.'),
+  ('dddd0000-0000-0000-0000-000000000006', '11111111-1111-1111-1111-111111111111', 'bbbbbbbb-0000-0000-0000-000000000010', 'Fedex',      '7789 1122 3344', 'retourne', null,              null,                        now() - interval '20 days', null,                       null,                      now() - interval '18 days', 'Non retiré sous 14 jours — retour expéditeur.');
+
+-- ---------- Pressing (Le Marly) ----------
+insert into public.pressing_orders (id, building_id, resident_id, provider, status, items, item_count, amount_cents, collected_at, expected_return_at, returned_at, delivered_at, notes) values
+  ('eeee0000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'bbbbbbbb-0000-0000-0000-000000000001', 'Pressing Montaigne', 'chez_le_pressing', '[{"label": "Costume 2 pièces", "quantity": 1}, {"label": "Chemise", "quantity": 4}]', 5, 8900,  now() - interval '1 day',  now() + interval '2 days', null,                       null,                      'Retouche ourlet demandée.'),
+  ('eeee0000-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111', 'bbbbbbbb-0000-0000-0000-000000000006', 'Pressing Montaigne', 'pret',             '[{"label": "Robe de soirée", "quantity": 1}]',                                       1, 4500,  now() - interval '3 days', now() - interval '1 day',  now() - interval '1 day',   null,                      null),
+  ('eeee0000-0000-0000-0000-000000000003', '11111111-1111-1111-1111-111111111111', 'bbbbbbbb-0000-0000-0000-000000000002', 'Blanchisserie Georges V', 'collecte',    '[{"label": "Manteau cachemire", "quantity": 1}]',                                    1, 6200,  now() - interval '2 hours', now() + interval '4 days', null,                      null,                      null),
+  ('eeee0000-0000-0000-0000-000000000004', '11111111-1111-1111-1111-111111111111', 'bbbbbbbb-0000-0000-0000-000000000001', 'Pressing Montaigne', 'livre',            '[{"label": "Chemise", "quantity": 6}]',                                              6, 3600,  now() - interval '9 days', now() - interval '7 days', now() - interval '7 days',  now() - interval '7 days', 'Livraison hebdomadaire du lundi.'),
+  ('eeee0000-0000-0000-0000-000000000005', '11111111-1111-1111-1111-111111111111', 'bbbbbbbb-0000-0000-0000-000000000009', 'Pressing Montaigne', 'livre',            '[{"label": "Smoking", "quantity": 1}, {"label": "Noeud papillon", "quantity": 1}]',  2, 7400,  now() - interval '16 days', now() - interval '13 days', now() - interval '13 days', now() - interval '12 days', null);
+
+-- ---------- Catalogue de recommandations (Le Marly) ----------
+insert into public.recommendations (id, building_id, category, name, description, address, phone, url, is_partner, commission_rate, rating, is_active) values
+  ('ffff0000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'restaurant', 'Le Petit Marius',       'Poissons et fruits de mer, salle discrète au premier étage.', '6 avenue George V, 75008 Paris',   '+33147203940', null, true,  10.00, 4.70, true),
+  ('ffff0000-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111', 'restaurant', 'Table Montaigne',       'Cuisine française contemporaine, table du chef sur demande.',  '30 avenue Montaigne, 75008 Paris', '+33153230100', null, false, null,  4.50, true),
+  ('ffff0000-0000-0000-0000-000000000003', '11111111-1111-1111-1111-111111111111', 'bien_etre',  'Spa Cinq Mondes',       'Massages à domicile possibles sous 48h.',                      '6 square de l''Opéra, 75009 Paris', '+33142668800', null, true,  12.00, 4.80, true),
+  ('ffff0000-0000-0000-0000-000000000004', '11111111-1111-1111-1111-111111111111', 'artisan',    'Atelier Bertin',        'Cordonnerie et maroquinerie de luxe, collecte en loge.',       '11 rue de Marignan, 75008 Paris',  '+33143591122', null, true,  15.00, 4.90, true),
+  ('ffff0000-0000-0000-0000-000000000005', '11111111-1111-1111-1111-111111111111', 'culture',    'Opéra Garnier — loges', 'Accès loges de catégorie 1 via notre partenaire billetterie.',  'Place de l''Opéra, 75009 Paris',   null,           null, true,  8.00,  4.60, true),
+  ('ffff0000-0000-0000-0000-000000000006', '11111111-1111-1111-1111-111111111111', 'transport',  'Aéro Prestige',         'Transferts aéroport en berline, repli si aucun chauffeur interne.', null,                          '+33170362200', null, true,  12.00, 4.30, true),
+  ('ffff0000-0000-0000-0000-000000000007', '11111111-1111-1111-1111-111111111111', 'artisan',    'Serrurerie Saint-Honoré','Dépannage 24/7, ancien prestataire — remplacé depuis mars.',   '82 rue Saint-Honoré, 75001 Paris', '+33142603311', null, false, null,  3.20, false);
+
+insert into public.recommendation_shares (building_id, recommendation_id, resident_id, shared_by_profile_id, conversation_id, channel, status, feedback, created_at) values
+  ('11111111-1111-1111-1111-111111111111', 'ffff0000-0000-0000-0000-000000000001', 'bbbbbbbb-0000-0000-0000-000000000004', 'aaaaaaaa-0000-0000-0000-000000000001', 'cccc0000-0000-0000-0000-000000000003', 'whatsapp', 'reservee',  'Table réservée jeudi 20h30, deux couverts.', now() - interval '1 day'),
+  ('11111111-1111-1111-1111-111111111111', 'ffff0000-0000-0000-0000-000000000003', 'bbbbbbbb-0000-0000-0000-000000000002', 'aaaaaaaa-0000-0000-0000-000000000001', 'cccc0000-0000-0000-0000-000000000002', 'whatsapp', 'consultee', null,                                        now() - interval '6 days'),
+  ('11111111-1111-1111-1111-111111111111', 'ffff0000-0000-0000-0000-000000000004', 'bbbbbbbb-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000001', 'cccc0000-0000-0000-0000-000000000001', 'whatsapp', 'reservee',  'Deux paires confiées le 12.',                now() - interval '11 days'),
+  ('11111111-1111-1111-1111-111111111111', 'ffff0000-0000-0000-0000-000000000002', 'bbbbbbbb-0000-0000-0000-000000000005', 'aaaaaaaa-0000-0000-0000-000000000001', null,                                   'email',    'refusee',   'Préfère un établissement plus proche.',      now() - interval '14 days'),
+  ('11111111-1111-1111-1111-111111111111', 'ffff0000-0000-0000-0000-000000000005', 'bbbbbbbb-0000-0000-0000-000000000004', 'aaaaaaaa-0000-0000-0000-000000000001', null,                                   'whatsapp', 'proposee',  null,                                        now() - interval '2 days'),
+  ('11111111-1111-1111-1111-111111111111', 'ffff0000-0000-0000-0000-000000000006', 'bbbbbbbb-0000-0000-0000-000000000009', 'aaaaaaaa-0000-0000-0000-000000000001', null,                                   'whatsapp', 'reservee',  'Transfert CDG confirmé.',                    now() - interval '20 days');
+
+-- ---------- Devis reçus par e-mail (PRD §6.1.6) ----------
+-- Le troisième n'est encore rattaché à personne : c'est l'état « reçu, à
+-- qualifier » que le concierge doit voir arriver.
+insert into public.quotes (building_id, resident_id, provider, label, amount_cents, status, source, email_from, email_subject, email_received_at, email_message_id, attachment_path) values
+  ('11111111-1111-1111-1111-111111111111', 'bbbbbbbb-0000-0000-0000-000000000001', 'Atelier Bertin',           'Restauration de deux paires — cuir pleine fleur', 34000, 'envoye',    'email', 'devis@atelier-bertin.fr',    'Devis n°2026-0412 — M. Dubois',        now() - interval '2 days',  '<a41f@atelier-bertin.fr>',  'quotes/marly/bertin-2026-0412.pdf'),
+  ('11111111-1111-1111-1111-111111111111', 'bbbbbbbb-0000-0000-0000-000000000004', 'Spa Cinq Mondes',          'Massage à domicile — forfait 5 séances',         52000, 'en_attente','email', 'reservations@cinqmondes.fr', 'Votre demande de devis — forfait spa', now() - interval '5 hours', '<9b02@cinqmondes.fr>',      'quotes/marly/cinqmondes-forfait.pdf'),
+  ('11111111-1111-1111-1111-111111111111', null,                                   'Serrurerie Saint-Honoré',  'Devis reçu — à rattacher à un résident',         null,  'en_attente','email', 'contact@serrurerie-sh.fr',   'Devis intervention porte palière 4e',  now() - interval '1 hour',  '<c73d@serrurerie-sh.fr>',   'quotes/marly/serrurerie-porte-4e.pdf'),
+  ('11111111-1111-1111-1111-111111111111', 'bbbbbbbb-0000-0000-0000-000000000002', 'Blanchisserie Georges V',  'Entretien annuel manteau cachemire',              9800, 'accepte',   'email', 'devis@blanchisserie-gv.fr',  'Devis entretien cachemire',            now() - interval '18 days', '<1f55@blanchisserie-gv.fr>','quotes/marly/gv-cachemire.pdf');
+
+-- ---------- Autres immeubles : de quoi éprouver l'isolation ----------
+do $$
+declare
+  b record;
+  target_resident uuid;
+  target_conversation uuid;
+  reco uuid;
+  concierge_id uuid;
+begin
+  for b in select id from public.buildings where id <> '11111111-1111-1111-1111-111111111111' loop
+    select id into concierge_id from public.profiles
+      where building_id = b.id and role in ('concierge', 'admin') limit 1;
+
+    for i in 1..4 loop
+      select id into target_resident from public.residents
+        where building_id = b.id order by random() limit 1;
+      exit when target_resident is null;
+
+      insert into public.parcels (building_id, resident_id, carrier, tracking_code, status, storage_location, received_at)
+      values (b.id, target_resident,
+              (array['Chronopost', 'DHL', 'UPS', 'Colissimo'])[1 + floor(random() * 4)],
+              upper(substr(md5(random()::text), 1, 11)),
+              (array['recu', 'stocke', 'notifie', 'remis'])[1 + floor(random() * 4)]::parcel_status,
+              'Loge', now() - (random() * 10 || ' days')::interval);
+
+      insert into public.pressing_orders (building_id, resident_id, provider, status, items, item_count, amount_cents, collected_at)
+      values (b.id, target_resident, 'Pressing du quartier',
+              (array['collecte', 'chez_le_pressing', 'pret', 'livre'])[1 + floor(random() * 4)]::pressing_status,
+              '[{"label": "Chemise", "quantity": 3}]', 3, 2400 + floor(random() * 5000)::int,
+              now() - (random() * 12 || ' days')::interval);
+    end loop;
+
+    -- Un fil WhatsApp ouvert par immeuble, avec un message entrant en attente.
+    select id into target_resident from public.residents
+      where building_id = b.id order by random() limit 1;
+    if target_resident is not null then
+      insert into public.conversations (building_id, resident_id, channel, status, assigned_profile_id)
+      values (b.id, target_resident, 'whatsapp', 'ouverte', concierge_id)
+      returning id into target_conversation;
+
+      insert into public.messages (building_id, conversation_id, direction, sender_profile_id, body, delivery_status, created_at)
+      values (b.id, target_conversation, 'entrant', null, 'Bonjour, auriez-vous un pressing à me recommander ?', 'livre', now() - interval '2 hours');
+    end if;
+
+    insert into public.recommendations (building_id, category, name, description, is_partner, commission_rate, rating)
+    values (b.id, 'restaurant', 'Table du quartier', 'Adresse de proximité recommandée par la loge.', false, null, 4.10)
+    returning id into reco;
+
+    if target_resident is not null and reco is not null then
+      insert into public.recommendation_shares (building_id, recommendation_id, resident_id, shared_by_profile_id, channel, status)
+      values (b.id, reco, target_resident, concierge_id, 'whatsapp', 'proposee');
+    end if;
+
+    -- Un devis arrivé par mail, non encore qualifié.
+    insert into public.quotes (building_id, resident_id, provider, label, amount_cents, status, source, email_from, email_subject, email_received_at, email_message_id)
+    values (b.id, null, 'Prestataire local', 'Devis reçu — à qualifier', null, 'en_attente', 'email',
+            'devis@prestataire.fr', 'Votre demande de devis', now() - (random() * 3 || ' days')::interval,
+            '<' || substr(md5(random()::text), 1, 8) || '@prestataire.fr>');
+  end loop;
+end;
+$$;
+
+-- ---------- Catalogue services & tarifs (démo) ----------
+-- Le catalogue est provisionné par trigger à la création de l'immeuble ;
+-- on ne personnalise ici que quelques lignes pour illustrer l'écran admin.
+update public.building_services set partner_name = 'Pressing Montaigne', base_price_cents = 2200, commission_rate = 22.00
+  where building_id = '11111111-1111-1111-1111-111111111111' and service = 'pressing';
+update public.building_services set partner_name = 'VTC Étoile', base_price_cents = 320, sla_minutes = 20
+  where building_id = '11111111-1111-1111-1111-111111111111' and service = 'chauffeur';
+-- Villa Ségur ne propose pas encore la billetterie : le service est fermé.
+update public.building_services set enabled = false
+  where building_id = '22222222-2222-2222-2222-222222222222' and service = 'billetterie';
+
+insert into public.notification_templates (building_id, slug, label, title, body) values
+  ('11111111-1111-1111-1111-111111111111', 'coupure_eau', 'Coupure d’eau',
+   'Coupure d’eau programmée',
+   'L’eau sera coupée le [date] de [heure] à [heure] dans [zone]. Votre concierge tient des bouteilles à disposition à la loge.'),
+  ('11111111-1111-1111-1111-111111111111', 'travaux', 'Travaux (Le Marly)',
+   'Travaux dans votre immeuble',
+   'Des travaux sont prévus le [date] de [heure] à [heure] dans [zone]. La loge organise vos accès et la réception de vos colis pendant la période.');

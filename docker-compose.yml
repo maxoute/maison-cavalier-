@@ -3,8 +3,10 @@
 #
 # L'application se connecte à un projet Supabase Cloud (Postgres + RLS,
 # Auth, Realtime, Storage) — voir .env.production.example pour les
-# variables requises. Caddy gère le HTTPS automatique (Let's Encrypt)
-# pour le domaine app.maison-cavalier.com.
+# variables requises. Le serveur héberge plusieurs apps derrière un
+# Traefik partagé (Dokploy) : pas de reverse proxy dédié ici, le
+# routage HTTPS (Let's Encrypt) se fait via les labels traefik.* et
+# le réseau externe `dokploy-network`.
 #
 # Usage :
 #   cp .env.production.example .env
@@ -32,20 +34,18 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+    networks:
+      - default
+      - dokploy-network
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: dokploy-network
+      traefik.http.routers.maison-cavalier-web.rule: Host(`app.maison-cavalier.com`)
+      traefik.http.routers.maison-cavalier-web.entrypoints: websecure
+      traefik.http.routers.maison-cavalier-web.service: maison-cavalier-web
+      traefik.http.routers.maison-cavalier-web.tls.certresolver: letsencrypt
+      traefik.http.services.maison-cavalier-web.loadbalancer.server.port: "3000"
 
-  caddy:
-    image: caddy:2-alpine
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      - app
-
-volumes:
-  caddy_data:
-  caddy_config:
+networks:
+  dokploy-network:
+    external: true

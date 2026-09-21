@@ -1,0 +1,84 @@
+# Développement complet — suivi du PRD
+
+Objectif : développer l’application web Maison Cavalier de A à Z selon `.CLAUDE.MD`, sans réduire le périmètre aux écrans déjà existants. L’objectif n’est pas terminé. Ce document distingue le code présent des parcours vérifiés.
+
+## Accès constatés le 17 septembre 2026
+
+- Dépôt complet, PRD, composants et migrations : accessibles.
+- Variables URL, clé publique et clé serveur Supabase : renseignées localement ; valeurs non reproduites ici. Cela ne prouve pas le bon fonctionnement du projet distant.
+- Conteneur `maison-cavalier-rls-test` : accessible ; migrations et suite SQL exécutées avec succès.
+- Stripe, Mapbox, WhatsApp : aucune valeur trouvée pour les variables de clés attendues ; intégrations réelles non validées. Email, SMS et WhatsApp utilisent des simulations.
+- La base de test est un PostgreSQL avec les primitives Auth utilisées par les policies, pas une stack Supabase complète. Auth, Realtime et Storage exigent des tests complémentaires.
+
+## Matrice de couverture
+
+| Exigence PRD | État observé | Travail / preuve restant nécessaire |
+| --- | --- | --- |
+| §4–5 Rôles et isolation multi-tenant | Policies et tests SQL présents ; suite locale verte | Couvrir tous les nouveaux modules et tous les rôles au fur et à mesure ; tester les URL avec sessions réelles |
+| §6.1.1 Demandes / Kanban | Création, filtres, statuts, compteur SLA et abonnement Realtime codés ; échéance SLA par défaut issue du catalogue, vérifiée en navigateur le 21/09 | Tests navigateur multi-session, réception WebSocket et volume |
+| §6.1.2 Live Map | Démonstration statique | Contrat provider, données chauffeurs, positions, sélection/suivi, filtres, vérification latence |
+| §6.1.3 Voiturier | Table courses présente | Attribution manuelle/automatique, acceptation, notifications, alerte Plan B après 3 minutes |
+| §6.1.4 Pressing / colis | Registres, transitions, notifications simulées, planning semaine | Modification créneaux, photo Storage et preuves, caméra, rappel J+2, vérification navigateur |
+| §6.1.5 CRM | Fiches, création, import CSV et historique présents | Vérifier import/doublons/erreurs, insights, score post-service et templates contact |
+| §6.1.6 Devis | Création depuis une demande, modification tant qu’en attente, PDF serveur, transitions gardées en SQL, indicateurs de conversion ; vérifié en navigateur le 18/09 | Notifications réelles, délai d’acceptation mesuré sur des envois réels |
+| §6.1.7 Interventions | Prestataire, fin prévue, début/fin, incidents avec alerte syndic générique, résolution, métriques ; vérifié en navigateur le 18/09 | Liaison à la capture de paiement (Stripe), notifications réelles |
+| §6.1.8 Messagerie syndic | Fil dédié et documents immeuble séparés des devis privés | Pièces jointes Storage, escalade urgence, traçabilité/signature et tests navigateur |
+| §6.1.9 Annonces | Modèles, ciblage étage/occupation, notifications simulées atomiques et historique | Écran d’accueil immeuble, providers réels quand disponibles, tests navigateur |
+| §6.2 Portail syndic | Messagerie et documents présents, reporting vide | Reporting agrégé sans données privées, notifications urgentes et tests URL |
+| §6.3.1 Dashboard global | Quelques agrégats et liste immeubles | KPIs complets, séries temporelles, SLA, satisfaction, alertes et comparaison |
+| §6.3.2 Immeubles | Page vide ; sélecteur de cookie présent ; configuration par immeuble (services, tarifs, prestataire local) et contexte super-admin effectif sur `/admin/services`, vérifiés le 21/09 | Onboarding d’un immeuble, affectations de concierges, contexte super-admin sur les autres écrans admin et exports par immeuble |
+| §6.3.3 Utilisateurs | Page vide ; import résident disponible côté CRM | Création/désactivation Auth via API serveur, rôles/affectations, journal consultable |
+| §6.3.4 Services et tarifs | Catalogue par immeuble (activation, unité fixe/km/heure, tarif, commission, prestataire, SLA), modèles de notification et commissions estimées ; écriture réservée aux gestionnaires, vérifié en navigateur et en SQL le 21/09 | Application du tarif aux montants facturés et aux devis, commissions réelles avec Stripe, exports |
+| §6.3.5 Finance | Page vide | Transactions Stripe, remboursements/litiges, commissions, reversements et exports |
+| §7.1 Authentification/MFA | Login et écrans TOTP présents | `mfaRequiredRoles` est actuellement vide dans les changements antérieurs : obligation MFA non satisfaite ; valider le parcours et le choix TOTP/SMS avant livraison |
+| §7.2 Stripe et Connect | Non implémenté | Modèle paiement, idempotence, webhooks signés, capture après validation, reçus, Connect, tests sandbox |
+| §7.3 Notifications | Interfaces et mocks, journal et triggers de simulation | Providers réels, préférences/consentements, erreurs/reprises, délivrabilité et délai push |
+| §7.4 Reporting | Page vide | Génération mensuelle, agrégats sûrs, accès admin/syndic et exports |
+| §9 Non-fonctionnel | Build et tests partiels | Accessibilité navigateur, performances, latences, sauvegardes/restauration, RGPD et audit complet |
+| §10 Design | Composants et charte présents | Contrôler chaque écran : contrastes, texte ≥16 px, responsive, accent or unique |
+| §11 / annexe B Intégrations et contrat mobile | Types et tables partagés présents | API/webhooks partenaires, droits résident/chauffeur, contrats et compatibilité ; applications mobiles hors périmètre web |
+| §12 Fidélité / Personal Shopper | Champ points et service générique présents | Parcours missions shopper, validation, règles de fidélité et administration |
+| Déploiement et livraison | Docker/compose présents ; migrations et seed rejoués dans une base PostgreSQL vierge | Tester stack Supabase, staging authentifié et production ; ne pas confondre code local et déployé |
+
+## Dernières vérifications
+
+- `npm run lint`, `npx tsc --noEmit` et `npm run build -- --webpack` : réussis après les modifications.
+- `npm run test:unit` : tests SLA, transitions et dates UTC réussis.
+- Suite `supabase/tests/rls.test.sql` exécutée dans le conteneur de test : isolation historique, opérations, demandes et annonces réussies ; transaction annulée à la fin.
+- Migrations du 17 septembre appliquées uniquement à cette base de test.
+- Migration `20260921000001_service_catalog.sql` (catalogue, tarifs, commissions, modèles) appliquée à la base E2E et rejouée depuis une base vierge.
+- Rejeu complet du 21 septembre dans la base vierge `mc_verify_20260921` du conteneur de test : schéma Auth sans données, `pgcrypto` dans `extensions`, `search_path` à `public, extensions`, les 8 migrations dans l’ordre, seed complet puis toute la suite SQL, catalogue compris.
+- Suite RLS : le contrôle des notifications d’incident grave comparait un effectif absolu ; il part désormais d’un relevé avant insertion, sinon toute base portant déjà des incidents le faisait échouer.
+- Rejeu complet réussi dans la base vierge `mc_verify_20260917` du même conteneur : schéma Auth de test sans données, toutes les migrations dans l’ordre, seed complet, puis toute la suite SQL. L’export Auth vidait `search_path` ; il a été rétabli à `public, extensions` avant les migrations. Aucune modification de production.
+- L’abonnement Realtime est configuré d’après la documentation Supabase ; la publication SQL existe. Aucun test WebSocket de bout en bout effectué à ce stade.
+
+## Vérification navigateur du 18 septembre 2026
+
+Stack Supabase E2E complète (`npm run e2e:stack` : Auth, REST, Realtime, Storage) avec les 7 migrations ; `next dev` sur le port 3100 pointé vers cette stack. Suite RLS complète verte sur cette base (y compris interventions et devis). Parcours Playwright, 19 contrôles réussis :
+
+- Concierge : création d’un devis depuis une demande, PDF valide (200, `%PDF`), envoi simulé, verrouillage de la modification, acceptation ; attribution prestataire et fin prévue, incident grave (alerte syndic), résolution ; aucune erreur JS.
+- Syndic : redirection vers `/acces-refuse` sur `/concierge/devis`, PDF refusé (403), incident privé absent du portail syndic.
+- Concierge d’un autre immeuble : PDF refusé (404), devis invisible.
+
+Les données de test créées restent dans la base E2E dédiée (libellés « E2E … »). Realtime WebSocket et Storage non couverts par ce parcours.
+
+## Vérification navigateur du 21 septembre 2026
+
+Même stack E2E (Supabase complet sur les 8 migrations) ; application servie en build de production sur le port 3100 pointé vers cette stack. 19 contrôles Playwright réussis :
+
+- Admin Le Marly : ouverture de `/admin/services`, réglage du pressing (33,00 €, commission 12,5 %, SLA 90 min, prestataire), refus d’une commission à 140 %, fermeture puis réouverture du service colis.
+- Effet immédiat en loge : le service fermé disparaît du formulaire de demande et revient après réouverture ; une demande créée sans échéance reçoit l’échéance SLA du catalogue (90 min).
+- Modèles : création d’un modèle d’immeuble, proposé au concierge dans Annonces à côté des modèles intégrés et pré-remplissant le message.
+- Refus d’accès : concierge et syndic redirigés vers `/acces-refuse` sur `/admin/services`.
+- Super-admin : immeuble actif Villa Ségur pris en compte, réglage d’un service d’un autre immeuble accepté.
+- Aucune erreur JavaScript.
+
+Le formulaire de connexion n’est actif qu’après hydratation : le script de vérification réessaie la connexion, sans quoi le navigateur envoie le formulaire en GET.
+
+## Ordre de poursuite
+
+1. ~~Compléter interventions/devis~~ (vérifié le 18/09), ~~puis services/tarifs~~ (vérifié le 21/09), puis l’onboarding d’immeuble afin de disposer des données réelles de paramétrage.
+2. Implémenter reporting syndic et gestion utilisateurs/affectations, puis étendre aux autres écrans admin le contexte d’immeuble du super-admin (`lib/admin/server.ts`, aujourd’hui utilisé par `/admin/services`).
+3. Développer voiturier/Plan B et les contrats de carte simulés, puis paiement Stripe/Connect avec tests sandbox.
+4. Terminer Storage/photos/documents, rappels, fidélité, exports et intégrations disponibles.
+5. Vérifier chaque critère d’acceptation en navigateur et sur Supabase, puis préparer la livraison.

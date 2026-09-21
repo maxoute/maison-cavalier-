@@ -44,7 +44,7 @@ export default async function ResidentsPage({
         </div>
       </div>
 
-      <form className="flex gap-3" method="get">
+      <form className="flex flex-wrap gap-3" method="get">
         <div className="relative max-w-xs w-full">
           <IconSearch
             size={13}

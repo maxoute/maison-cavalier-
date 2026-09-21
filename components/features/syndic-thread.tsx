@@ -25,7 +25,7 @@ export async function SyndicThread({ viewerId }: { viewerId: string }) {
   return (
     <div className="max-w-[600px] space-y-4 fade-up">
       <p className="text-[10px] text-grey">
-        Canal sécurisé · historisé · signé numériquement — accès syndic en
+        Canal sécurisé · messages horodatés — accès syndic en
         lecture + réponse uniquement
       </p>
 

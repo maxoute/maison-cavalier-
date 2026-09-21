@@ -16,6 +16,11 @@ import { createClient } from "@/lib/supabase/server";
 // élément React déjà rendu le peut.
 const nav = [
   { href: "/concierge", label: "Demandes", icon: <IconGrid size={15} /> },
+  { href: "/concierge/whatsapp", label: "WhatsApp", icon: <IconChat size={15} /> },
+  { href: "/concierge/colis", label: "Colis", icon: <IconGrid size={15} /> },
+  { href: "/concierge/pressing", label: "Pressing", icon: <IconCheck size={15} /> },
+  { href: "/concierge/recommandations", label: "Recommandations", icon: <IconMap size={15} /> },
+  { href: "/concierge/documents", label: "Devis immeuble", icon: <IconDoc size={15} /> },
   { href: "/concierge/live-map", label: "Live Map", icon: <IconMap size={15} /> },
   { href: "/concierge/residents", label: "Résidents", icon: <IconUsers size={15} /> },
   { href: "/concierge/devis", label: "Devis", icon: <IconDoc size={15} /> },

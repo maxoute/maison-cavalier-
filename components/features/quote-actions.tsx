@@ -1,29 +1,26 @@
-"use client";
+'use client';
 
-import { useTransition } from "react";
-import { updateQuoteStatus } from "@/app/actions/quotes";
-import { Button } from "@/components/ui/button";
+import { useState, useTransition } from 'react';
+import { updateQuoteStatus } from '@/app/actions/quotes';
+import { quoteTransitions } from '@/lib/quotes';
+import type { QuoteStatus } from '@/types';
+import type { ActionResult } from '@/lib/operations/shared';
 
-/** Validation / refus en un clic (PRD §6.1.6). */
-export function QuoteActions({ id }: { id: string }) {
+export function QuoteActions({ id, status, version }: { id: string; status: QuoteStatus; version: string }) {
   const [pending, startTransition] = useTransition();
-  return (
-    <div className="flex gap-1.5 shrink-0">
-      <Button
-        size="sm"
-        disabled={pending}
-        onClick={() => startTransition(() => updateQuoteStatus(id, "accepte"))}
-      >
-        Valider
-      </Button>
-      <Button
-        size="sm"
-        variant="outline"
-        disabled={pending}
-        onClick={() => startTransition(() => updateQuoteStatus(id, "refuse"))}
-      >
-        Refuser
-      </Button>
-    </div>
-  );
+  const [result, setResult] = useState<ActionResult>({});
+  return <div className="space-y-2">
+    <div className="flex flex-wrap gap-2">{quoteTransitions[status].map(next => <button key={next} type="button" disabled={pending}
+      className="rounded-3xl border border-navy-3 px-4 py-2 hover:bg-navy disabled:opacity-50"
+      onClick={() => startTransition(async () => {
+        setResult({});
+        try { setResult(await updateQuoteStatus(id, next, status, version)); }
+        catch { setResult({ error: 'Connexion interrompue. Réessayez.' }); }
+      })}>
+      {next === 'envoye' ? 'Simuler l’envoi au résident' : next === 'accepte' ? 'Enregistrer l’acceptation' : 'Enregistrer le refus'}
+    </button>)}</div>
+    {pending && <p role="status">Enregistrement…</p>}
+    {result.error && <p role="alert" className="text-red">{result.error}</p>}
+    {result.success && <p role="status">{result.success}</p>}
+  </div>;
 }

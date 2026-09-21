@@ -64,8 +64,58 @@ export async function deleteResident(id: string) {
 }
 
 /**
+ * Découpe un CSV en lignes/colonnes (RFC 4180) : guillemets, séparateurs et
+ * retours à la ligne échappés à l'intérieur d'un champ sont respectés.
+ */
+function parseCsv(text: string, delimiter: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = "";
+  let quoted = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+
+    if (quoted) {
+      if (c === '"') {
+        if (text[i + 1] === '"') {
+          field += '"';
+          i++;
+        } else {
+          quoted = false;
+        }
+      } else {
+        field += c;
+      }
+      continue;
+    }
+
+    if (c === '"' && field.trim() === "") {
+      quoted = true;
+    } else if (c === delimiter) {
+      row.push(field.trim());
+      field = "";
+    } else if (c === "\n" || c === "\r") {
+      if (c === "\r" && text[i + 1] === "\n") i++;
+      row.push(field.trim());
+      field = "";
+      if (row.some((v) => v !== "")) rows.push(row);
+      row = [];
+    } else {
+      field += c;
+    }
+  }
+
+  row.push(field.trim());
+  if (row.some((v) => v !== "")) rows.push(row);
+  return rows;
+}
+
+/**
  * Import en masse (PRD §6.3.3) — CSV avec en-têtes :
  * full_name,email,phone,floor,unit,owner_status
+ * Accepte le séparateur `;` (export Excel FR), le BOM UTF-8 et les champs
+ * entre guillemets contenant des virgules.
  */
 export async function importResidentsCsv(formData: FormData) {
   const session = await getSession();
@@ -73,33 +123,51 @@ export async function importResidentsCsv(formData: FormData) {
 
   const file = formData.get("file");
   if (!(file instanceof File)) throw new Error("Fichier manquant.");
-  const text = await file.text();
+  // Excel préfixe ses exports UTF-8 d'un BOM : sans ce retrait, la première
+  // en-tête devient "\ufefffull_name" et la colonne est jugée manquante.
+  const text = (await file.text()).replace(/^\ufeff/, "");
 
-  const lines = text.split(/\r?\n/).filter((l) => l.trim() !== "");
-  if (lines.length < 2) throw new Error("CSV vide.");
+  const firstLine = text.split(/\r?\n/, 1)[0] ?? "";
+  const delimiter = firstLine.includes(";")
+    ? ";"
+    : firstLine.includes("\t")
+      ? "\t"
+      : ",";
 
-  const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
+  const table = parseCsv(text, delimiter);
+  if (table.length < 2) throw new Error("CSV vide.");
+
+  const headers = table[0].map((h) => h.trim().toLowerCase());
   const idx = (name: string) => headers.indexOf(name);
   if (idx("full_name") === -1)
     throw new Error("Colonne obligatoire manquante : full_name");
 
-  const rows = lines.slice(1).map((line) => {
-    const cols = line.split(",").map((c) => c.trim());
-    const get = (name: string) => {
-      const i = idx(name);
-      return i >= 0 && cols[i] !== "" ? cols[i] : null;
-    };
-    return {
-      building_id: session.buildingId,
-      full_name: get("full_name") ?? "",
-      email: get("email"),
-      phone: get("phone"),
-      floor: get("floor"),
-      unit: get("unit"),
-      owner_status:
-        get("owner_status") === "locataire" ? "locataire" : "proprietaire",
-    };
-  });
+  const rows = table
+    .slice(1)
+    .map((cols) => {
+      const get = (name: string) => {
+        const i = idx(name);
+        const v = i >= 0 ? cols[i] : undefined;
+        return v != null && v !== "" ? v : null;
+      };
+      return {
+        building_id: session.buildingId,
+        full_name: get("full_name"),
+        email: get("email"),
+        phone: get("phone"),
+        floor: get("floor"),
+        unit: get("unit"),
+        owner_status:
+          get("owner_status")?.toLowerCase() === "locataire"
+            ? "locataire"
+            : "proprietaire",
+      };
+    })
+    // Une ligne sans nom créerait une fiche vide et non identifiable
+    .filter((r): r is typeof r & { full_name: string } => r.full_name !== null);
+
+  if (rows.length === 0)
+    throw new Error("Aucune ligne exploitable : la colonne full_name est vide.");
 
   const supabase = await createClient();
   const { error } = await supabase.from("residents").insert(rows);

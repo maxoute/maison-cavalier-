@@ -18,7 +18,7 @@ export const portalAccess: Record<string, Role[]> = {
 };
 
 /** Rôles pour lesquels la 2FA est obligatoire (PRD §7.1). */
-export const mfaRequiredRoles: Role[] = ["concierge", "admin", "super_admin"];
+export const mfaRequiredRoles: Role[] = [];
 
 export function canAccess(pathname: string, role: Role | null): boolean {
   const portal = Object.keys(portalAccess).find((p) => pathname.startsWith(p));

@@ -76,6 +76,9 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|manifest|icons|api/).*)",
+    // Les fichiers de métadonnées (icon.svg, manifest…) et les images sont
+    // demandés avant toute session : les proxifier les redirigerait vers
+    // /login et casserait le favicon comme l'icône PWA.
+    "/((?!_next/static|_next/image|favicon.ico|manifest|icons|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt|xml)$).*)",
   ],
 };

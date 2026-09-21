@@ -67,7 +67,7 @@ export default async function ResidentDetailPage({
           </div>
         </div>
         {/* Contact direct depuis la fiche (PRD §6.1.5) */}
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {r.phone && (
             <>
               <a href={`tel:${r.phone}`}>
