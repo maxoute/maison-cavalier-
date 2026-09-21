@@ -288,6 +288,11 @@ export interface RecommendationShare {
   channel: NotificationChannelType;
   status: RecommendationShareStatus;
   feedback: string | null;
+  /** Montant de la réservation, renseigné au passage en « réservée ». */
+  booking_amount_cents: number | null;
+  /** Commission figée à la réservation, d'après le taux du partenaire. */
+  commission_cents: number | null;
+  status_changed_at: string | null;
   created_at: string;
 }
 

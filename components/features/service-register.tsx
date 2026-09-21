@@ -1,6 +1,7 @@
 import { staffContext, residentsForStaff, check } from '@/lib/operations/server';
 import { parcelLabels, pressingLabels } from '@/lib/operations/shared';
-import { createParcel, createPressing, advanceOperation } from '@/app/actions/operations';
+import { createParcel, createPressing, advanceOperation, uploadParcelPhoto, rescheduleParcel } from '@/app/actions/operations';
+import { ParcelReminders } from './parcel-reminders';
 import { OperationForm } from './operation-form';
 import { Field, ResidentSelect } from './operation-fields';
 import { ServiceSchedule } from './service-schedule';
@@ -16,8 +17,20 @@ export async function ServiceRegister({ kind }: { kind: 'parcels' | 'pressing_or
   const labels = parcel ? parcelLabels : pressingLabels;
   const active = rows.filter(row => !['remis', 'retourne', 'livre'].includes(row.status));
   const names = new Map(residents.map(r => [r.id, r.full_name]));
+  // Les preuves vivent dans un bucket privé : chaque photo est servie par une
+  // URL signée de courte durée, jamais par un lien public.
+  const photoPaths = rows.flatMap(row => ('photo_path' in row && row.photo_path ? [row.photo_path] : []));
+  const photos = new Map<string, string>();
+  if (photoPaths.length) {
+    const signed = await db.storage.from('colis').createSignedUrls(photoPaths, 120);
+    for (const entry of signed.data ?? []) if (entry.path && entry.signedUrl) photos.set(entry.path, entry.signedUrl);
+  }
+  const reminderDue = parcel ? rows.filter(row => 'received_at' in row && !row.reminder_sent_at
+    && !['remis', 'retourne'].includes(row.status)
+    && now - Date.parse(row.received_at) > 2 * 86_400_000).length : 0;
   return <div className="space-y-6 text-base">
     <header><h1 className="text-3xl">{parcel ? 'Gestion des colis' : 'Pressing'}</h1><p className="text-grey mt-2">{active.length} en cours · {rows.length} au total. Notifications en mode simulation.</p></header>
+    {parcel && <section className="rounded-lg border border-navy-3 p-4"><ParcelReminders due={reminderDue} /></section>}
     <details className="rounded-lg border border-navy-3 p-4"><summary className="cursor-pointer text-cream">{parcel ? 'Réceptionner un colis' : 'Nouvelle collecte'}</summary>
       <div className="mt-4 max-w-xl"><OperationForm action={parcel ? createParcel : createPressing} primary>
         <ResidentSelect residents={residents} />
@@ -41,6 +54,29 @@ export async function ServiceRegister({ kind }: { kind: 'parcels' | 'pressing_or
         <p className="text-grey">Enregistré le {new Date(row.created_at).toLocaleString('fr-FR', { timeZone: 'UTC' })} UTC</p>
         {deadline && <p className={!done && new Date(deadline).getTime() < now ? 'text-red' : 'text-cream'}>Prévu : {new Date(deadline).toLocaleString('fr-FR', { timeZone: 'UTC' })} UTC</p>}
         {row.notes && <p>{row.notes}</p>}
+        {'photo_path' in row && <>
+          {row.reminder_sent_at && <p className="text-grey">Rappel envoyé le {new Date(row.reminder_sent_at).toLocaleString('fr-FR', { timeZone: 'UTC' })} UTC</p>}
+          {row.photo_path && photos.get(row.photo_path)
+            // URL signée de courte durée sur un bucket privé : `next/image`
+            // la mettrait en cache et demanderait d'autoriser l'hôte Supabase.
+            // eslint-disable-next-line @next/next/no-img-element
+            ? <img src={photos.get(row.photo_path)} alt={`Preuve de réception du colis de ${names.get(row.resident_id) ?? 'ce résident'}`} className="max-h-56 w-full rounded-lg border border-navy-3 object-contain" />
+            : <p className="text-grey">Aucune preuve photo.</p>}
+          <details><summary className="cursor-pointer">{row.photo_path ? 'Remplacer la photo' : 'Ajouter une photo'}</summary>
+            <div className="mt-3"><OperationForm action={uploadParcelPhoto} submit="Enregistrer la photo">
+              <input type="hidden" name="id" value={row.id} />
+              <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" capture="environment" required aria-label="Photo du colis" className="block w-full text-cream file:mr-3 file:rounded-3xl file:border file:border-navy-3 file:bg-navy-2 file:px-4 file:py-2 file:text-cream" />
+              <p className="text-grey">Depuis la tablette de la loge, le bouton ouvre directement l’appareil photo. JPEG, PNG ou WebP, 5 Mo maximum.</p>
+            </OperationForm></div>
+          </details>
+          {!done && <details><summary className="cursor-pointer">Modifier le créneau de remise</summary>
+            <div className="mt-3"><OperationForm action={rescheduleParcel} submit="Mettre à jour le créneau">
+              <input type="hidden" name="id" value={row.id} />
+              <Field label="Livraison prévue (heure UTC)" name="scheduled_delivery_at" type="datetime-local" defaultValue={row.scheduled_delivery_at ? row.scheduled_delivery_at.slice(0, 16) : ''} />
+              <p className="text-grey">Laisser vide retire le colis du planning.</p>
+            </OperationForm></div>
+          </details>}
+        </>}
         {!done && <OperationForm action={advanceOperation} submit="Étape suivante"><input type="hidden" name="kind" value={kind} /><input type="hidden" name="id" value={row.id} /><input type="hidden" name="status" value={row.status} /></OperationForm>}
       </article>;
     })}</div>

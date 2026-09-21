@@ -826,4 +826,217 @@ begin
   raise notice 'TESTS CATALOGUE PASSÉS';
 end;
 $$;
+-- Colis : preuve photo, créneau corrigeable et rappel J+2 unique.
+do $$
+declare
+  b1 constant uuid := '11111111-1111-1111-1111-111111111111';
+  b2 constant uuid := '22222222-2222-2222-2222-222222222222';
+  concierge1 constant uuid := 'aaaaaaaa-0000-0000-0000-000000000001';
+  concierge2 constant uuid := 'aaaaaaaa-0000-0000-0000-000000000005';
+  resident1 uuid; ancien uuid; recent uuid; n integer; sent integer; failed boolean;
+begin
+  select id into strict resident1 from public.residents where building_id = b1 limit 1;
+  perform pg_temp.impersonate(concierge1, 'concierge', b1);
+  insert into public.parcels (building_id, resident_id, tracking_code, received_at)
+    values (b1, resident1, 'TEST-RAPPEL', now() - interval '3 days') returning id into ancien;
+  insert into public.parcels (building_id, resident_id, tracking_code, received_at)
+    values (b1, resident1, 'TEST-RECENT', now()) returning id into recent;
+
+  sent := public.send_parcel_reminders();
+  if sent < 1 then raise exception 'Aucun rappel J+2 envoyé'; end if;
+  select count(*) into n from public.notifications
+   where event = 'rappel_colis_non_retire' and payload->>'operation_id' = ancien::text;
+  if n <> 2 then raise exception 'Rappel J+2 absent ou dupliqué : %', n; end if;
+  if not exists (select 1 from public.parcels where id = ancien and reminder_sent_at = now()) then
+    raise exception 'Rappel non horodaté'; end if;
+  if exists (select 1 from public.parcels where id = recent and reminder_sent_at is not null) then
+    raise exception 'Rappel envoyé avant deux jours'; end if;
+
+  -- Rejouer l'opération ne renvoie rien : le rappel est unique par colis.
+  perform public.send_parcel_reminders();
+  select count(*) into n from public.notifications
+   where event = 'rappel_colis_non_retire' and payload->>'operation_id' = ancien::text;
+  if n <> 2 then raise exception 'Rappel J+2 rejoué : %', n; end if;
+
+  -- Créneau corrigeable tant que le colis est en loge, figé après remise.
+  update public.parcels set scheduled_delivery_at = now() + interval '4 hours' where id = ancien;
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'Créneau non modifiable avant remise'; end if;
+  update public.parcels set status = 'stocke' where id = ancien;
+  update public.parcels set status = 'notifie' where id = ancien;
+  update public.parcels set status = 'remis' where id = ancien;
+  failed := false;
+  begin update public.parcels set scheduled_delivery_at = now() where id = ancien;
+  exception when check_violation then failed := true; end;
+  if not failed then raise exception 'Créneau modifié après remise'; end if;
+
+  -- La preuve photo ne s'efface pas.
+  update public.parcels set photo_path = b1 || '/' || recent || '/preuve.jpg' where id = recent;
+  failed := false;
+  begin update public.parcels set photo_path = null where id = recent;
+  exception when check_violation then failed := true; end;
+  if not failed then raise exception 'Preuve photo effaçable'; end if;
+
+  perform pg_temp.reset_role();
+  perform pg_temp.impersonate(concierge2, 'concierge', b2);
+  select count(*) into n from public.parcels where id in (ancien, recent);
+  if n <> 0 then raise exception 'Colis visibles hors immeuble'; end if;
+  update public.parcels set storage_location = 'Interdit' where id = recent;
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'Colis modifiable hors immeuble'; end if;
+  perform pg_temp.reset_role();
+  raise notice 'TESTS COLIS PASSÉS';
+end;
+$$;
+-- Affiliations : cycle d'un partage, commission figée et isolation.
+do $$
+declare
+  b1 constant uuid := '11111111-1111-1111-1111-111111111111';
+  b2 constant uuid := '22222222-2222-2222-2222-222222222222';
+  concierge1 constant uuid := 'aaaaaaaa-0000-0000-0000-000000000001';
+  concierge2 constant uuid := 'aaaaaaaa-0000-0000-0000-000000000005';
+  resident1 uuid; partenaire uuid; simple uuid; partage uuid; autre uuid;
+  n integer; failed boolean;
+begin
+  select id into strict resident1 from public.residents where building_id = b1 limit 1;
+  perform pg_temp.impersonate(concierge1, 'concierge', b1);
+
+  -- Un partenaire porte toujours un taux.
+  failed := false;
+  begin insert into public.recommendations (building_id, category, name, is_partner)
+    values (b1, 'restaurant', 'Partenaire sans taux', true);
+  exception when check_violation then failed := true; end;
+  if not failed then raise exception 'Partenaire accepté sans taux de commission'; end if;
+
+  insert into public.recommendations (building_id, category, name, is_partner, commission_rate)
+    values (b1, 'restaurant', 'Table partenaire TEST', true, 10.00) returning id into partenaire;
+  insert into public.recommendations (building_id, category, name)
+    values (b1, 'artisan', 'Artisan non affilié TEST') returning id into simple;
+
+  -- Le partage naît « proposée », sans montant même si on en fournit un.
+  insert into public.recommendation_shares (building_id, recommendation_id, resident_id, booking_amount_cents)
+    values (b1, partenaire, resident1, 9999) returning id into partage;
+  if not exists (select 1 from public.recommendation_shares
+                  where id = partage and status = 'proposee'
+                    and booking_amount_cents is null and status_changed_at = now()) then
+    raise exception 'État initial du partage incorrect'; end if;
+
+  -- Pas de raccourci vers la réservation.
+  failed := false;
+  begin update public.recommendation_shares set status = 'reservee', booking_amount_cents = 10000 where id = partage;
+  exception when check_violation then failed := true; end;
+  if not failed then raise exception 'Réservation sans consultation préalable'; end if;
+
+  update public.recommendation_shares set status = 'consultee' where id = partage;
+  failed := false;
+  begin update public.recommendation_shares set status = 'reservee' where id = partage;
+  exception when check_violation then failed := true; end;
+  if not failed then raise exception 'Réservation acceptée sans montant'; end if;
+
+  update public.recommendation_shares set status = 'reservee', booking_amount_cents = 20000 where id = partage;
+  if not exists (select 1 from public.recommendation_shares where id = partage and commission_cents = 2000) then
+    raise exception 'Commission mal calculée'; end if;
+
+  -- Montant et commission figés, y compris si le taux du partenaire change.
+  update public.recommendation_shares set feedback = 'Très satisfait' where id = partage;
+  update public.recommendations set commission_rate = 50.00 where id = partenaire;
+  if not exists (select 1 from public.recommendation_shares
+                  where id = partage and commission_cents = 2000 and booking_amount_cents = 20000) then
+    raise exception 'Commission acquise modifiée après coup'; end if;
+  failed := false;
+  begin update public.recommendation_shares set status = 'refusee' where id = partage;
+  exception when check_violation then failed := true; end;
+  if not failed then raise exception 'Réservation annulée par simple transition'; end if;
+
+  -- Sans affiliation, la mise en relation est suivie mais ne rapporte rien.
+  insert into public.recommendation_shares (building_id, recommendation_id, resident_id)
+    values (b1, simple, resident1) returning id into autre;
+  update public.recommendation_shares set status = 'consultee' where id = autre;
+  update public.recommendation_shares set status = 'reservee', booking_amount_cents = 30000 where id = autre;
+  if not exists (select 1 from public.recommendation_shares where id = autre and commission_cents = 0) then
+    raise exception 'Commission versée sur une adresse non affiliée'; end if;
+
+  perform pg_temp.reset_role();
+  perform pg_temp.impersonate(concierge2, 'concierge', b2);
+  select count(*) into n from public.recommendation_shares where id in (partage, autre);
+  if n <> 0 then raise exception 'Partages visibles hors immeuble'; end if;
+  update public.recommendations set commission_rate = 99 where id = partenaire;
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'Taux de commission modifiable hors immeuble'; end if;
+  perform pg_temp.reset_role();
+  raise notice 'TESTS AFFILIATIONS PASSÉS';
+end;
+$$;
+-- WhatsApp entrant : rattachement d'un numéro, fil unique et lecture.
+do $$
+declare
+  b1 constant uuid := '11111111-1111-1111-1111-111111111111';
+  b2 constant uuid := '22222222-2222-2222-2222-222222222222';
+  concierge1 constant uuid := 'aaaaaaaa-0000-0000-0000-000000000001';
+  resident1 uuid; resident2 uuid; fil uuid; autre uuid; n integer; failed boolean;
+  lu timestamptz;
+begin
+  select id into strict resident1 from public.residents
+   where building_id = b1 and phone is not null limit 1;
+  select id into strict resident2 from public.residents
+   where building_id = b2 and phone is not null limit 1;
+
+  -- Le numéro retrouve son résident quelle que soit la saisie de la fiche.
+  update public.residents set phone = '06 12 34 56 78' where id = resident1;
+  select count(*) into n from public.resident_by_whatsapp('33612345678');
+  if n <> 1 then raise exception 'Numéro WhatsApp non rattaché : %', n; end if;
+  update public.residents set phone = '+33 6 12 34 56 78' where id = resident1;
+  select count(*) into n from public.resident_by_whatsapp('+33612345678');
+  if n <> 1 then raise exception 'Format E.164 non reconnu'; end if;
+
+  -- Deux immeubles portant le même numéro : l'appelant doit pouvoir refuser.
+  update public.residents set phone = '0612345678' where id = resident2;
+  select count(*) into n from public.resident_by_whatsapp('33612345678');
+  if n <> 2 then raise exception 'Ambiguïté de numéro non signalée : %', n; end if;
+  update public.residents set phone = '0611111111' where id = resident2;
+
+  perform pg_temp.impersonate(concierge1, 'concierge', b1);
+  insert into public.conversations (building_id, resident_id, channel, external_thread_id)
+    values (b1, resident1, 'whatsapp', '33612345678')
+    on conflict (resident_id, channel) do update set external_thread_id = excluded.external_thread_id
+    returning id into fil;
+
+  -- Un identifiant de fil n'appartient qu'à une conversation.
+  select id into strict autre from public.residents where building_id = b1 and id <> resident1 limit 1;
+  failed := false;
+  begin insert into public.conversations (building_id, resident_id, channel, external_thread_id)
+    values (b1, autre, 'whatsapp', '33612345678');
+  exception when unique_violation then failed := true; end;
+  if not failed then raise exception 'Deux fils pour le même numéro WhatsApp'; end if;
+
+  -- Un message entrant rouvre le fil et le laisse non lu.
+  -- now() est figé dans la transaction : la lecture est datée d'avant.
+  update public.conversations set last_read_at = now() - interval '1 hour', status = 'resolue' where id = fil;
+  insert into public.messages (building_id, conversation_id, direction, body, external_message_id, delivery_status)
+    values (b1, fil, 'entrant', 'Bonjour', 'wamid.TEST-1', 'livre');
+  select last_read_at into lu from public.conversations where id = fil;
+  if not exists (select 1 from public.conversations
+                  where id = fil and status = 'ouverte' and last_message_at > lu) then
+    raise exception 'Message entrant sans réouverture ni non-lu'; end if;
+
+  -- Le même événement rejoué par Meta ne crée pas de doublon.
+  failed := false;
+  begin insert into public.messages (building_id, conversation_id, direction, body, external_message_id)
+    values (b1, fil, 'entrant', 'Bonjour', 'wamid.TEST-1');
+  exception when unique_violation then failed := true; end;
+  if not failed then raise exception 'Message entrant dupliqué'; end if;
+
+  -- Répondre vaut lecture.
+  insert into public.messages (building_id, conversation_id, direction, sender_profile_id, body)
+    values (b1, fil, 'sortant', concierge1, 'Bonjour, je vérifie.');
+  if not exists (select 1 from public.conversations where id = fil and last_read_at = last_message_at) then
+    raise exception 'Réponse de la loge sans marquage de lecture'; end if;
+  perform pg_temp.reset_role();
+
+  -- La fonction de rattachement reste hors de portée d'un client authentifié.
+  if has_function_privilege('authenticated', 'public.resident_by_whatsapp(text)', 'execute') then
+    raise exception 'resident_by_whatsapp exposée au client'; end if;
+  raise notice 'TESTS WHATSAPP ENTRANT PASSÉS';
+end;
+$$;
 rollback;

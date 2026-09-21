@@ -16,10 +16,11 @@ Objectif : développer l’application web Maison Cavalier de A à Z selon `.CLA
 | --- | --- | --- |
 | §4–5 Rôles et isolation multi-tenant | Policies et tests SQL présents ; suite locale verte | Couvrir tous les nouveaux modules et tous les rôles au fur et à mesure ; tester les URL avec sessions réelles |
 | §6.1.1 Demandes / Kanban | Création, filtres, statuts, compteur SLA et abonnement Realtime codés ; échéance SLA par défaut issue du catalogue, vérifiée en navigateur le 21/09 | Tests navigateur multi-session, réception WebSocket et volume |
+| §6.1.1 Chat WhatsApp opérationnel | Fils par résident, envoi via le contrat provider, **réception** par webhook signé (vérification d'abonnement, idempotence `wamid`, rattachement du numéro au bon immeuble, refus si numéro inconnu ou ambigu), badge non lu ; provider Meta Cloud API retenu dès que les quatre variables sont présentes — vérifié de bout en bout le 21/09 avec une signature locale | Ouverture du compte WhatsApp Business, médias entrants, modèles validés hors fenêtre 24 h |
 | §6.1.2 Live Map | Démonstration statique | Contrat provider, données chauffeurs, positions, sélection/suivi, filtres, vérification latence |
 | §6.1.3 Voiturier | Table courses présente | Attribution manuelle/automatique, acceptation, notifications, alerte Plan B après 3 minutes |
-| §6.1.4 Pressing / colis | Registres, transitions, notifications simulées, planning semaine | Modification créneaux, photo Storage et preuves, caméra, rappel J+2, vérification navigateur |
-| §6.1.5 CRM | Fiches, création, import CSV et historique présents | Vérifier import/doublons/erreurs, insights, score post-service et templates contact |
+| §6.1.4 Pressing / colis | Registres, transitions, notifications simulées, planning semaine ; preuve photo dans un bucket privé, prise directe depuis la tablette, créneau corrigeable tant que le colis est en loge, rappel J+2 unique (loge ou ordonnanceur) — vérifié en navigateur le 21/09 | Rappels et notifications réellement envoyés (providers), preuves côté pressing |
+| §6.1.5 CRM | Fiches, création, import CSV et historique présents ; recommandations affiliées (partenaire, taux, suivi consultée/réservée/refusée, commission figée à la réservation) vérifiées le 21/09 | Vérifier import/doublons/erreurs, insights, score post-service et templates contact ; reversement réel des commissions avec Stripe |
 | §6.1.6 Devis | Création depuis une demande, modification tant qu’en attente, PDF serveur, transitions gardées en SQL, indicateurs de conversion ; vérifié en navigateur le 18/09 | Notifications réelles, délai d’acceptation mesuré sur des envois réels |
 | §6.1.7 Interventions | Prestataire, fin prévue, début/fin, incidents avec alerte syndic générique, résolution, métriques ; vérifié en navigateur le 18/09 | Liaison à la capture de paiement (Stripe), notifications réelles |
 | §6.1.8 Messagerie syndic | Fil dédié et documents immeuble séparés des devis privés | Pièces jointes Storage, escalade urgence, traçabilité/signature et tests navigateur |
@@ -48,6 +49,7 @@ Objectif : développer l’application web Maison Cavalier de A à Z selon `.CLA
 - Migrations du 17 septembre appliquées uniquement à cette base de test.
 - Migration `20260921000001_service_catalog.sql` (catalogue, tarifs, commissions, modèles) appliquée à la base E2E et rejouée depuis une base vierge.
 - Rejeu complet du 21 septembre dans la base vierge `mc_verify_20260921` du conteneur de test : schéma Auth sans données, `pgcrypto` dans `extensions`, `search_path` à `public, extensions`, les 8 migrations dans l’ordre, seed complet puis toute la suite SQL, catalogue compris.
+- Suite RLS : blocs ajoutés pour les colis (rappel J+2 unique, créneau figé après remise, preuve non effaçable), les affiliations (cycle du partage, commission figée, isolation) et la réception WhatsApp (rattachement du numéro, fil unique, non-lu, `resident_by_whatsapp` hors de portée du client).
 - Suite RLS : le contrôle des notifications d’incident grave comparait un effectif absolu ; il part désormais d’un relevé avant insertion, sinon toute base portant déjà des incidents le faisait échouer.
 - Rejeu complet réussi dans la base vierge `mc_verify_20260917` du même conteneur : schéma Auth de test sans données, toutes les migrations dans l’ordre, seed complet, puis toute la suite SQL. L’export Auth vidait `search_path` ; il a été rétabli à `public, extensions` avant les migrations. Aucune modification de production.
 - L’abonnement Realtime est configuré d’après la documentation Supabase ; la publication SQL existe. Aucun test WebSocket de bout en bout effectué à ce stade.
@@ -61,6 +63,17 @@ Stack Supabase E2E complète (`npm run e2e:stack` : Auth, REST, Realtime, Storag
 - Concierge d’un autre immeuble : PDF refusé (404), devis invisible.
 
 Les données de test créées restent dans la base E2E dédiée (libellés « E2E … »). Realtime WebSocket et Storage non couverts par ce parcours.
+
+## Vérification du 21 septembre 2026 — colis, affiliations, WhatsApp entrant
+
+Même stack E2E, application servie en build de production sur le port 3100, configurée avec un secret d'ordonnanceur et une configuration WhatsApp locale (aucun appel à Meta). 27 contrôles réussis :
+
+- Colis : réception, preuve photo téléversée dans le bucket privé et servie par URL signée, correction du créneau, rappels J+2 déclenchés depuis la loge ; `POST /api/rappels/colis` refuse sans secret (401) et pose un rappel unique par colis avec son secret.
+- Affiliations : création d'un partenaire à 10 %, partage à un résident, passage en consultée puis réservée à 200 € — commission de 20 € figée sur la fiche et remontée dans les compteurs.
+- WhatsApp entrant : vérification d'abonnement Meta (challenge rendu, jeton erroné refusé), événement non signé ou signé d'un autre secret refusé (401), message enregistré dans le fil du bon résident, rejeu sans doublon, numéro inconnu écarté, badge non lu puis marquage de lecture.
+- Aucune erreur JavaScript.
+
+Les envois sortants n'ont pas été exercés dans cette passe : le jeton Meta est fictif, et un envoi partirait réellement chez Meta.
 
 ## Vérification navigateur du 21 septembre 2026
 
@@ -77,8 +90,8 @@ Le formulaire de connexion n’est actif qu’après hydratation : le script de 
 
 ## Ordre de poursuite
 
-1. ~~Compléter interventions/devis~~ (vérifié le 18/09), ~~puis services/tarifs~~ (vérifié le 21/09), puis l’onboarding d’immeuble afin de disposer des données réelles de paramétrage.
+1. ~~Compléter interventions/devis~~ (vérifié le 18/09), ~~puis services/tarifs~~, ~~colis (preuves, créneaux, rappels)~~, ~~affiliations~~ et ~~réception WhatsApp~~ (vérifiés le 21/09), puis l’onboarding d’immeuble afin de disposer des données réelles de paramétrage.
 2. Implémenter reporting syndic et gestion utilisateurs/affectations, puis étendre aux autres écrans admin le contexte d’immeuble du super-admin (`lib/admin/server.ts`, aujourd’hui utilisé par `/admin/services`).
 3. Développer voiturier/Plan B et les contrats de carte simulés, puis paiement Stripe/Connect avec tests sandbox.
-4. Terminer Storage/photos/documents, rappels, fidélité, exports et intégrations disponibles.
+4. Terminer Storage côté documents syndic et pressing, ingestion automatique des devis reçus par mail (écartée à l’arbitrage du 21/09), fidélité, exports et intégrations disponibles.
 5. Vérifier chaque critère d’acceptation en navigateur et sur Supabase, puis préparer la livraison.
