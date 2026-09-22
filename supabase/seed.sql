@@ -556,13 +556,14 @@ where building_id = '11111111-1111-1111-1111-111111111111' and severity = 'grave
 insert into public.driver_trips (building_id, request_id, vehicle, status, origin, destination, last_lat, last_lng, eta, created_at)
 select '11111111-1111-1111-1111-111111111111', id, 'Berline Mercedes Classe S', 'en_route', '12 avenue Montaigne, Paris 8e', 'Aéroport CDG, Terminal 2E',
   48.8862, 2.3610, now() + interval '25 minutes', now() - interval '20 minutes'
-from public.service_requests where building_id = '11111111-1111-1111-1111-111111111111' and service = 'chauffeur' and status = 'en_cours'
-order by created_at desc limit 1;
+from public.service_requests where building_id = '11111111-1111-1111-1111-111111111111' and service = 'chauffeur' and status <> 'termine'
+order by (status = 'en_cours') desc, created_at desc limit 1;
 
 insert into public.driver_trips (building_id, request_id, vehicle, status, origin, destination, last_lat, last_lng, eta, created_at)
 select '11111111-1111-1111-1111-111111111111', id, 'Van Mercedes Classe V', 'acceptee', '12 avenue Montaigne, Paris 8e', 'Gare de Lyon',
   48.8664, 2.3079, now() + interval '40 minutes', now() - interval '4 minutes'
-from public.service_requests where building_id = '11111111-1111-1111-1111-111111111111' and service = 'chauffeur' and status = 'nouveau'
+from public.service_requests r where building_id = '11111111-1111-1111-1111-111111111111' and service = 'chauffeur' and status <> 'termine'
+  and not exists (select 1 from public.driver_trips t where t.request_id = r.id)
 order by created_at desc limit 1;
 
 -- Montants des réservations suivies (Le Marly) : commission figée au taux du partenaire.

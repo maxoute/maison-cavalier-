@@ -9,6 +9,7 @@ Démonstration complète de l'application prévue le 23 septembre 2026 : toutes 
 - Stack locale : `npx supabase start` puis `npx supabase db reset` (12 migrations + seed), `.env.local` généré depuis `npx supabase status` (URL, clé anon, clé service-role, `CRON_SECRET`).
 - `npm run dev` sur http://localhost:3000 ; comptes `concierge@demo.mc`, `admin@demo.mc`, `super@demo.mc`, `syndic@demo.mc`, `concierge3@demo.mc` (mot de passe `cavalier123`).
 - Le seed a été enrichi pour que les écrans ne soient pas vides : annonces, documents syndic, incidents d'intervention (dont un grave, résolu, qui alimente le fil syndic), courses chauffeur, montants et commissions des réservations partenaires.
+- Après un `db reset`, si le tableau des demandes affiche « Actualisation chaque minute » au lieu de « Temps réel connecté », relancer la passerelle locale : `docker restart supabase_kong_MAISON-CAVALIER` (le conteneur Realtime redémarre avec une nouvelle adresse que Kong ne voit pas toujours).
 - La MFA reste désactivée (`mfaRequiredRoles = []`) : aucun compte de démo n'a de TOTP enrôlé ; les écrans `/login/mfa*` proposent désormais un retour à la connexion.
 
 ## Audit et corrections
@@ -32,7 +33,13 @@ Constats de l'audit (détail dans `docs/developpement.md`) et corrections apport
 
 ## Écrans réalisés
 
-_Section complétée à la fin de la session avec le résultat des trois chantiers parallèles : Immeubles + Utilisateurs, Finance + Reporting syndic, Live Map._
+- **Immeubles** (`/admin/immeubles`, PRD §6.3.2) : parc avec formule, résidents, équipe, demandes en cours, services actifs, bascule de l'immeuble piloté ; onboarding en une étape (immeuble + concierge + syndic optionnel) via `app/actions/buildings.ts` et le client service-role, catalogue provisionné par trigger, comptes créés avec mot de passe temporaire, l'immeuble créé devient l'immeuble piloté.
+- **Utilisateurs** (`/admin/utilisateurs`, PRD §6.3.3) : comptes staff par immeuble (rôle, email, dernière connexion, état), création et désactivation/réactivation via `app/actions/users.ts` (`auth.admin`), autorisations strictes (l'admin ne gère que concierges et syndics de son immeuble, jamais lui-même), journal `audit_logs`.
+- **Finance** (`/admin/finance`, PRD §6.3.5) : KPIs du mois (revenus des services terminés, commissions Maison Cavalier au taux du catalogue, commissions d'affiliation, reversements partenaires, devis acceptés), tendance sur six mois, répartition par service et par immeuble (super-admin), export CSV Excel FR via `GET /api/finance/export?mois=YYYY-MM` (401/403 hors admin). Logique pure dans `lib/finance.ts` (11 tests). Stripe Connect signalé « à raccorder ».
+- **Reporting syndic** (`/syndic/reporting`, PRD §6.2/§7.4) : fonction SQL `public.syndic_monthly_report(uuid, date)` `security definer` (migration `20260922000001`) ne renvoyant que des agrégats — demandes par service, taux de respect des délais, incidents (total/graves/résolus), annonces, messages, satisfaction moyenne, tendance 12 mois ; refus hors immeuble testé dans la suite RLS. Écran avec sélecteur de mois, graphiques et synthèse rédigée.
+- **Live Map** (`/concierge/live-map`, PRD §6.1.2/§6.1.3) : contrat `DriverPositionProvider` (`lib/drivers/`), fournisseur simulé déterministe (4 chauffeurs, trajets, statuts, latence < 1 s, 13 tests) et stub Mapbox activé par `NEXT_PUBLIC_MAPBOX_TOKEN` ; carte SVG stylisée, marqueurs orientés, suivi d'un chauffeur, filtres, fiche détail, courses réelles de `driver_trips`, Plan B (alerte après 3 min sans réponse, taxi externe) côté client.
+
+Points à connaître : le seed n'alimentant pas `completed_at`/`decided_at`, les agrégats finance et reporting se basent sur `completed_at ?? created_at` (documenté et testé) ; la migration de reporting doit être appliquée au projet Supabase Cloud avant le déploiement (`npx supabase db push`).
 
 ## Vérifications
 

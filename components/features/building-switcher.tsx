@@ -24,6 +24,7 @@ export function BuildingSwitcher({
       </p>
       <div className="relative">
         <select
+          key={current ?? buildings[0]?.id}
           aria-label="Immeuble"
           defaultValue={current ?? buildings[0]?.id}
           onChange={(e) => {
