@@ -1039,4 +1039,73 @@ begin
   raise notice 'TESTS WHATSAPP ENTRANT PASSÉS';
 end;
 $$;
+-- Reporting mensuel du syndic : la fonction SECURITY DEFINER ne livre que
+-- des agrégats, et jamais ceux d'un autre immeuble.
+do $$
+declare
+  marly constant uuid := '11111111-1111-1111-1111-111111111111';
+  malesherbes constant uuid := '33333333-3333-3333-3333-333333333333';
+  syndic1 constant uuid := 'aaaaaaaa-0000-0000-0000-000000000004';
+  syndic3 constant uuid := 'aaaaaaaa-0000-0000-0000-000000000007';
+  mois constant date := date_trunc('month', now())::date;
+  rapport jsonb;
+  texte text;
+  donnee text;
+  n integer;
+  failed boolean;
+begin
+  perform pg_temp.impersonate(syndic1, 'syndic', marly);
+  rapport := public.syndic_monthly_report(marly, mois);
+  if rapport is null or jsonb_typeof(rapport) <> 'object' then
+    raise exception 'Rapport syndic absent'; end if;
+  if (rapport #>> '{requests,total}')::integer < 0 then
+    raise exception 'Total de demandes incohérent'; end if;
+  if not (rapport ? 'sla' and rapport ? 'incidents' and rapport ? 'satisfaction'
+          and rapport ? 'announcements' and rapport ? 'syndic_messages' and rapport ? 'trend') then
+    raise exception 'Rapport syndic incomplet'; end if;
+  if jsonb_array_length(rapport -> 'trend') <> 12 then
+    raise exception 'Tendance sur douze mois attendue'; end if;
+  -- La satisfaction n'est qu'une moyenne : aucune note individuelle.
+  if jsonb_typeof(rapport -> 'satisfaction' -> 'average') not in ('number', 'null') then
+    raise exception 'Satisfaction détaillée exposée'; end if;
+  texte := rapport::text;
+  perform pg_temp.reset_role();
+
+  -- Aucun nom, e-mail ou téléphone de résident ne doit transiter.
+  for donnee in
+    select full_name from public.residents where building_id = marly
+    union all select email from public.residents where building_id = marly and email is not null
+    union all select phone from public.residents where building_id = marly and phone is not null
+  loop
+    if position(donnee in texte) > 0 then
+      raise exception 'Donnée nominative exposée dans le rapport syndic : %', donnee; end if;
+  end loop;
+
+  -- Le syndic d'un autre immeuble n'obtient rien sur Le Marly.
+  perform pg_temp.impersonate(syndic3, 'syndic', malesherbes);
+  failed := false;
+  begin perform public.syndic_monthly_report(marly, mois);
+  exception when others then failed := true; end;
+  if not failed then raise exception 'Reporting d’un autre immeuble accessible au syndic'; end if;
+  if (public.syndic_monthly_report(malesherbes, mois) #>> '{residents}')::integer < 0 then
+    raise exception 'Reporting de son propre immeuble refusé'; end if;
+  -- Et il n'a toujours aucun accès direct aux demandes qu'il fait compter.
+  select count(*) into n from public.service_requests where building_id = malesherbes;
+  if n <> 0 then raise exception 'Demandes lisibles en direct par le syndic'; end if;
+  perform pg_temp.reset_role();
+
+  -- Sans session, la fonction est hors de portée.
+  perform set_config('request.jwt.claims', '', true);
+  perform set_config('role', 'anon', true);
+  failed := false;
+  begin perform public.syndic_monthly_report(marly, mois);
+  exception when others then failed := true; end;
+  if not failed then raise exception 'Reporting accessible sans authentification'; end if;
+  perform pg_temp.reset_role();
+  if has_function_privilege('anon', 'public.syndic_monthly_report(uuid, date)', 'execute') then
+    raise exception 'Reporting syndic exécutable par anon'; end if;
+
+  raise notice 'TESTS REPORTING SYNDIC PASSÉS';
+end;
+$$;
 rollback;

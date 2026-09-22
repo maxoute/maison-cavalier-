@@ -7,9 +7,9 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "Cavalier",
     description:
       "Cockpit opérationnel de la conciergerie d'immeuble haut de gamme",
-    start_url: "/concierge",
+    start_url: "/",
     display: "standalone",
-    background_color: "#0A1628",
+    background_color: "#F5F3EE",
     theme_color: "#0A1628",
     icons: [
       {

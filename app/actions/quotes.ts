@@ -43,7 +43,7 @@ export async function updateQuoteStatus(id: string, status: QuoteStatus, expecte
     if (error?.code === '23514') throw new Error('Complétez le devis avant envoi ou actualisez son statut.');
     check(error);
     if (!data?.length) throw new Error('Le devis a changé. Actualisez la page.');
-    revalidatePath('/concierge/devis'); revalidatePath('/concierge/residents');
+    revalidatePath('/concierge', 'layout'); revalidatePath('/admin', 'layout');
     return { success: 'Statut enregistré. Notification résident simulée.' };
   } catch (error) { return { error: error instanceof Error ? error.message : 'Mise à jour impossible.' }; }
 }

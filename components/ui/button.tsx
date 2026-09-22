@@ -14,9 +14,9 @@ const variants: Record<Variant, string> = {
     "hover:-translate-y-px active:translate-y-0 active:brightness-95",
   ),
   ghost:
-    "bg-gold/[0.06] text-gold-light border border-gold/40 hover:bg-gold/[0.12] hover:border-gold/60",
+    "bg-gold/[0.06] text-gold-deep border border-gold/40 hover:bg-gold/[0.12] hover:border-gold/60",
   outline:
-    "bg-white/[0.02] text-cream/80 border border-navy-3 hover:border-grey/50 hover:bg-white/[0.04] hover:text-cream",
+    "bg-ink/[0.03] text-ink/80 border border-line hover:border-grey/50 hover:bg-ink/[0.03] hover:text-ink",
   danger: "bg-red/[0.06] text-red border border-red/40 hover:bg-red/[0.12] hover:border-red/60",
 };
 

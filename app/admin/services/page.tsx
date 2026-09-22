@@ -35,8 +35,8 @@ export default async function ServicesPage() {
   return (
     <div className="space-y-7 fade-up">
       <div>
-        <h1 className="text-2xl text-cream">Services &amp; tarifs</h1>
-        <p className="text-[11px] text-grey mt-1">
+        <h1 className="text-2xl text-ink">Services &amp; tarifs</h1>
+        <p className="text-[11px] text-muted mt-1">
           {building.data?.name} · {active} service{active > 1 ? 's' : ''} actif{active > 1 ? 's' : ''} sur {rows.length}
           {session.role === 'super_admin' ? ' · immeuble choisi dans la barre latérale' : ''}
         </p>
@@ -49,7 +49,7 @@ export default async function ServicesPage() {
           { v: `${(commissions / 100).toLocaleString('fr-FR')} €`, l: 'commissions au taux courant' },
         ].map(({ v, l }) => (
           <Card key={l} className="p-4">
-            <p className="font-serif text-cream text-2xl leading-none">{v}</p>
+            <p className="font-serif text-ink text-2xl leading-none">{v}</p>
             <SectionLabel className="mt-2 text-[9px]">{l}</SectionLabel>
           </Card>
         ))}
@@ -57,7 +57,7 @@ export default async function ServicesPage() {
 
       <section className="space-y-2">
         <SectionLabel className="mb-2.5">Catalogue de l’immeuble</SectionLabel>
-        {rows.length === 0 && <p className="text-[11px] text-grey">Catalogue non provisionné pour cet immeuble.</p>}
+        {rows.length === 0 && <p className="text-[11px] text-muted">Catalogue non provisionné pour cet immeuble.</p>}
         {serviceOrder.map(service => {
           const row = byService.get(service);
           if (!row) return null;
@@ -72,7 +72,7 @@ export default async function ServicesPage() {
             />
           );
         })}
-        <p className="text-[10px] text-grey pt-1">
+        <p className="text-[10px] text-muted pt-1">
           Un service désactivé reste consultable dans l’historique : les demandes en cours se terminent normalement, seules les nouvelles sont refusées, y compris par appel direct.
         </p>
       </section>

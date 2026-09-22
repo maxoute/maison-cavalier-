@@ -37,7 +37,9 @@ export async function advanceOperation(_: ActionResult, form: FormData) {
     if (kind !== 'parcels' && kind !== 'pressing_orders') throw new Error('Service invalide.');
     const expected = field(form, 'status', true)!;
     const transitions: Record<string, string> = kind === 'parcels' ? { recu: 'stocke', stocke: 'notifie', notifie: 'remis' } : { collecte: 'chez_le_pressing', chez_le_pressing: 'pret', pret: 'livre' };
-    const status = transitions[expected];
+    // Retour transporteur : un colis en loge peut repartir sans être remis.
+    const target = field(form, 'target');
+    const status = target === 'retourne' && kind === 'parcels' && ['recu', 'stocke', 'notifie'].includes(expected) ? 'retourne' : transitions[expected];
     if (!status) throw new Error('Cette opération est déjà terminée.');
     const now = new Date().toISOString();
     const { data, error } = await db.from(kind).update({ status, ...(status === 'pret' ? { returned_at: now } : {}), ...(['remis', 'livre'].includes(status) ? { delivered_at: now } : {}) }).eq('building_id', session.buildingId).eq('id', uuid(form, 'id')).eq('status', expected).select('id');

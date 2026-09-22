@@ -67,8 +67,8 @@ export default function MfaEnrollPage() {
     <form onSubmit={handleSubmit} className="space-y-5">
       <div>
         <h2 className="text-xl mb-1">Activer la double authentification</h2>
-        <p className="text-sm text-grey">
-          Obligatoire pour les comptes concierge et administrateur. Scannez le
+        <p className="text-sm text-muted">
+          Recommandée pour les comptes concierge et administrateur. Scannez le
           QR code avec Google Authenticator, 1Password ou équivalent.
         </p>
       </div>
@@ -79,7 +79,7 @@ export default function MfaEnrollPage() {
         </div>
       )}
       {secret && (
-        <p className="text-xs text-grey text-center break-all">
+        <p className="text-xs text-muted text-center break-all">
           Clé manuelle : {secret}
         </p>
       )}
@@ -96,7 +96,7 @@ export default function MfaEnrollPage() {
           required
         />
       </div>
-      {error && <p className="text-sm text-red-700">{error}</p>}
+      {error && <p className="text-sm text-red">{error}</p>}
       <Button
         type="submit"
         variant="gold"
@@ -105,6 +105,7 @@ export default function MfaEnrollPage() {
       >
         {loading ? "Activation…" : "Activer la 2FA"}
       </Button>
+      <p className="text-center text-[11px] text-muted"><a href="/login" className="underline underline-offset-4 hover:text-ink">Retour à la connexion</a></p>
     </form>
   );
 }

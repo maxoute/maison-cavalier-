@@ -1,23 +1,35 @@
 @import "tailwindcss";
 
 :root {
-  /* Palette Maison Cavalier — tokens du prototype client */
+  /* Palette Maison Cavalier — mode clair.
+     Le navy et l'or restent les couleurs de marque ; le crème devient le fond
+     de page, le blanc les surfaces, le navy le texte. */
   --navy: #0a1628;
   --navy-2: #10213c;
   --navy-3: #16294a;
   --gold: #b8922a;
   --gold-light: #d9bc6e;
+  --gold-deep: #8a6b1b; /* or lisible sur fond clair (texte, icônes) */
   --cream: #f5f3ee;
   --cream-dark: #e9e4d8;
-  --grey: #8a93a6;
-  --green: #3fa776;
-  --orange: #d98e3b;
-  --red: #c2503f;
-  --violet: #7b5ea7;
-  --blue: #3e6fb8;
 
-  --background: var(--navy);
-  --foreground: var(--cream);
+  /* Tokens sémantiques d'interface */
+  --page: #f5f3ee; /* fond de page (crème) */
+  --surface: #ffffff; /* cartes, panneaux, champs */
+  --surface-2: #f2efe8; /* fonds secondaires, survols, en-têtes de table */
+  --line: #e4dfd4; /* bordures */
+  --ink: #0a1628; /* texte principal (navy) */
+  --muted: #6b7384; /* texte secondaire */
+
+  --grey: #6b7384;
+  --green: #2f8f5b;
+  --orange: #c9781f;
+  --red: #b9452f;
+  --violet: #6a4d9e;
+  --blue: #2f5fa8;
+
+  --background: var(--page);
+  --foreground: var(--ink);
 }
 
 @theme inline {
@@ -26,8 +38,15 @@
   --color-navy-3: var(--navy-3);
   --color-gold: var(--gold);
   --color-gold-light: var(--gold-light);
+  --color-gold-deep: var(--gold-deep);
   --color-cream: var(--cream);
   --color-cream-dark: var(--cream-dark);
+  --color-page: var(--page);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
   --color-grey: var(--grey);
   --color-green: var(--green);
   --color-orange: var(--orange);
@@ -52,13 +71,17 @@
   --radius-button: 24px;
 }
 
+html {
+  color-scheme: light;
+}
+
 body {
   background: radial-gradient(
-    1200px 600px at 50% -10%,
-    var(--navy-3),
-    var(--navy) 60%
+    1100px 520px at 50% -12%,
+    #fbfaf7,
+    var(--page) 60%
   );
-  background-color: var(--navy);
+  background-color: var(--page);
   color: var(--foreground);
   font-family: var(--font-poppins), sans-serif;
   font-size: 16px; /* WCAG : police >= 16px (PRD §9) */
@@ -70,31 +93,51 @@ h3,
 h4 {
   font-family: var(--font-lora), serif;
   font-weight: 500;
+  color: var(--ink);
+}
+
+/* Les listes déroulantes natives suivent le thème clair */
+select,
+option {
+  color: var(--ink);
+  background-color: var(--surface);
+}
+
+/* Disclosure natifs : chevron discret, curseur main */
+summary {
+  cursor: pointer;
+  list-style: none;
+}
+summary::-webkit-details-marker {
+  display: none;
+}
+summary::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 10px;
+  border-right: 1.5px solid var(--gold);
+  border-bottom: 1.5px solid var(--gold);
+  transform: rotate(-45deg) translateY(-1px);
+  transition: transform 0.25s ease;
+}
+details[open] > summary::before {
+  transform: rotate(45deg) translateY(-2px);
 }
 
 ::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--gold) 35%, transparent);
-  border-radius: 4px;
+  background: color-mix(in srgb, var(--ink) 18%, transparent);
+  border-radius: 6px;
 }
 
 :focus-visible {
-  outline: 2px solid var(--gold-light);
+  outline: 2px solid var(--gold);
   outline-offset: 2px;
-}
-
-/* Grain subtil — évite l'à-plat digital, donne une matière au navy */
-.grain {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  opacity: 0.035;
-  mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 @keyframes fadeUp {

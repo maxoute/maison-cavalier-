@@ -23,6 +23,7 @@ export default function MfaChallengePage() {
     const { data: factors } = await supabase.auth.mfa.listFactors();
     const totp = (factors?.totp ?? []).find((f) => f.status === "verified");
     if (!totp) {
+      setLoading(false);
       router.push("/login/mfa/enroll");
       return;
     }
@@ -46,7 +47,7 @@ export default function MfaChallengePage() {
     <form onSubmit={handleSubmit} className="space-y-5">
       <div>
         <h2 className="text-xl mb-1">Vérification en deux étapes</h2>
-        <p className="text-sm text-grey">
+        <p className="text-sm text-muted">
           Saisissez le code à 6 chiffres de votre application
           d&apos;authentification.
         </p>
@@ -65,10 +66,11 @@ export default function MfaChallengePage() {
           required
         />
       </div>
-      {error && <p className="text-sm text-red-700">{error}</p>}
+      {error && <p className="text-sm text-red">{error}</p>}
       <Button type="submit" variant="gold" className="w-full" disabled={loading}>
         {loading ? "Vérification…" : "Vérifier"}
       </Button>
+      <p className="text-center text-[11px] text-muted"><a href="/login" className="underline underline-offset-4 hover:text-ink">Retour à la connexion</a></p>
     </form>
   );
 }

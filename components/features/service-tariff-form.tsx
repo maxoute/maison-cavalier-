@@ -13,28 +13,28 @@ export function ServiceTariffForm({
   const euros = (row.base_price_cents / 100).toFixed(2).replace('.', ',');
   const rate = String(row.commission_rate).replace('.', ',');
   return (
-    <details className="rounded-[8px] border border-navy-3 bg-navy-2/60 px-4 py-3">
+    <details className="rounded-[8px] border border-line bg-surface/60 px-4 py-3">
       <summary className="cursor-pointer list-none">
         <span className="flex flex-wrap items-center justify-between gap-3">
           <span className="min-w-0">
-            <span className="block text-[13px] text-cream">{label}</span>
-            <span className="block text-[11px] text-grey mt-0.5">
+            <span className="block text-[13px] text-ink">{label}</span>
+            <span className="block text-[11px] text-muted mt-0.5">
               {formatTariff(row.base_price_cents, row.pricing_unit)} · commission {rate} % · {formatSla(row.sla_minutes)}
               {row.partner_name ? ` · ${row.partner_name}` : ''}
             </span>
           </span>
           <span className="flex items-center gap-4 shrink-0">
-            <span className="text-[11px] text-grey">
-              <span className="text-cream">{(revenueCents / 100).toLocaleString('fr-FR')} €</span> réalisés ·{' '}
-              <span className="text-cream">{(commissionCents / 100).toLocaleString('fr-FR')} €</span> de commission
+            <span className="text-[11px] text-muted">
+              <span className="text-ink">{(revenueCents / 100).toLocaleString('fr-FR')} €</span> réalisés ·{' '}
+              <span className="text-ink">{(commissionCents / 100).toLocaleString('fr-FR')} €</span> de commission
             </span>
-            <span className={`text-[10px] uppercase tracking-[1px] ${row.enabled ? 'text-green' : 'text-grey'}`}>
+            <span className={`text-[10px] uppercase tracking-[1px] ${row.enabled ? 'text-green' : 'text-muted'}`}>
               {row.enabled ? 'Actif' : 'Désactivé'}
             </span>
           </span>
         </span>
       </summary>
-      <div className="mt-4 border-t border-navy-3 pt-4 text-[12.5px]">
+      <div className="mt-4 border-t border-line pt-4 text-[12.5px]">
         <OperationForm action={saveBuildingService} submit="Enregistrer ce service">
           <input type="hidden" name="service" value={row.service} />
           <label className="flex items-start gap-2">

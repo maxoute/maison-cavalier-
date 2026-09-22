@@ -98,7 +98,7 @@ export default function LoginPage() {
             required
           />
         </div>
-        {error && <p className="text-sm text-red-700">{error}</p>}
+        {error && <p className="text-sm text-red">{error}</p>}
         <Button
           type="submit"
           variant="gold"
@@ -111,11 +111,11 @@ export default function LoginPage() {
 
       <div className="space-y-2.5">
         <div className="flex items-center gap-2.5">
-          <span className="h-px flex-1 bg-navy-3" />
-          <span className="text-[9.5px] uppercase tracking-[1.5px] text-grey">
+          <span className="h-px flex-1 bg-surface-2" />
+          <span className="text-[9.5px] uppercase tracking-[1.5px] text-muted">
             Comptes de démonstration
           </span>
-          <span className="h-px flex-1 bg-navy-3" />
+          <span className="h-px flex-1 bg-surface-2" />
         </div>
         <div className="grid gap-1.5">
           {demoAccounts.map((acc) => {
@@ -126,20 +126,20 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => login(acc.email, demoPassword)}
                 disabled={loading !== null}
-                className="group flex items-center gap-3 rounded-[8px] border border-navy-3 bg-white/[0.02] px-3.5 py-2.5 text-left transition-colors duration-300 hover:border-gold/40 hover:bg-gold/[0.05] disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
+                className="group flex items-center gap-3 rounded-[8px] border border-line bg-ink/[0.03] px-3.5 py-2.5 text-left transition-colors duration-300 hover:border-gold/40 hover:bg-gold/[0.05] disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
               >
-                <span className="flex items-center justify-center w-7 h-7 rounded-full bg-gold/10 text-gold-light shrink-0">
+                <span className="flex items-center justify-center w-7 h-7 rounded-full bg-gold/10 text-gold-deep shrink-0">
                   <Icon size={13} />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[11.5px] text-cream truncate">
+                  <span className="block text-[11.5px] text-ink truncate">
                     {acc.label}
                   </span>
-                  <span className="block text-[9.5px] text-grey truncate">
+                  <span className="block text-[9.5px] text-muted truncate">
                     {acc.building}
                   </span>
                 </span>
-                <span className="text-[9.5px] text-grey group-hover:text-gold-light transition-colors duration-300 shrink-0">
+                <span className="text-[9.5px] text-muted group-hover:text-gold-deep transition-colors duration-300 shrink-0">
                   {loading === acc.email ? "Connexion…" : "Se connecter →"}
                 </span>
               </button>

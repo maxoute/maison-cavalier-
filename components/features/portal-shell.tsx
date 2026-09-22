@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "@/app/actions/auth";
 import { Avatar } from "@/components/ui/avatar";
-import { IconClose, IconLogout, IconMenu } from "@/components/ui/icons";
+import { IconArrowRight, IconClose, IconLogout, IconMenu } from "@/components/ui/icons";
 import { Seal } from "@/components/ui/seal";
 import { SidebarNav } from "./sidebar-nav";
 
@@ -30,6 +31,7 @@ const roleLabels: Record<string, string> = {
 export function PortalShell({
   portalName,
   nav,
+  secondaryNav = [],
   userName,
   role,
   sidebarExtra,
@@ -37,6 +39,8 @@ export function PortalShell({
 }: {
   portalName: string;
   nav: NavItem[];
+  /** Passerelles vers les autres portails accessibles au rôle. */
+  secondaryNav?: NavItem[];
   userName: string;
   role?: string;
   sidebarExtra?: React.ReactNode;
@@ -57,14 +61,14 @@ export function PortalShell({
 
   return (
     <div className="flex-1 flex flex-col min-h-screen md:flex-row">
-      <header className="md:hidden flex items-center justify-between gap-3 px-4 py-3 border-b border-navy-3 bg-navy-2">
+      <header className="md:hidden flex items-center justify-between gap-3 px-4 py-3 border-b border-line bg-surface">
         <div className="flex items-center gap-2.5 min-w-0">
           <Seal size={28} />
           <div className="min-w-0">
-            <p className="font-serif text-cream text-[13px] leading-tight truncate">
+            <p className="font-serif text-ink text-[13px] leading-tight truncate">
               Maison Cavalier
             </p>
-            <p className="text-[9px] uppercase tracking-[1.5px] text-gold-light/80 truncate">
+            <p className="text-[9px] uppercase tracking-[1.5px] text-gold-deep/80 truncate">
               {portalName}
             </p>
           </div>
@@ -74,7 +78,7 @@ export function PortalShell({
           aria-label={mobileOpen ? "Fermer le menu" : "Ouvrir le menu"}
           aria-expanded={mobileOpen}
           onClick={() => setMobileOpen((v) => !v)}
-          className="shrink-0 p-2 rounded-[8px] text-cream hover:bg-white/5 transition-colors duration-300 cursor-pointer"
+          className="shrink-0 p-2 rounded-[8px] text-ink hover:bg-ink/5 transition-colors duration-300 cursor-pointer"
         >
           {mobileOpen ? <IconClose size={20} /> : <IconMenu size={20} />}
         </button>
@@ -84,23 +88,23 @@ export function PortalShell({
         <div
           aria-hidden
           onClick={() => setMobileOpen(false)}
-          className="md:hidden fixed inset-0 z-30 bg-navy/70 backdrop-blur-[1px]"
+          className="md:hidden fixed inset-0 z-30 bg-ink/40 backdrop-blur-[1px]"
         />
       )}
 
       <aside
-        className={`w-[236px] shrink-0 border-r border-navy-3 bg-[linear-gradient(180deg,var(--navy-2),var(--navy))] flex flex-col
+        className={`w-[236px] shrink-0 border-r border-line bg-surface flex flex-col
           fixed inset-y-0 left-0 z-40 transition-[transform,visibility] duration-300 ease-out
-          md:static md:z-auto md:translate-x-0 md:visible
+          md:sticky md:top-0 md:h-screen md:z-auto md:translate-x-0 md:visible
           ${mobileOpen ? "translate-x-0 visible" : "-translate-x-full invisible"}`}
       >
-        <div className="hidden md:flex px-5 py-5 items-center gap-2.5 border-b border-navy-3/80">
+        <div className="hidden md:flex px-5 py-5 items-center gap-2.5 border-b border-line/80">
           <Seal size={32} />
           <div className="min-w-0">
-            <p className="font-serif text-cream text-[14px] leading-tight truncate">
+            <p className="font-serif text-ink text-[14px] leading-tight truncate">
               Maison Cavalier
             </p>
-            <p className="text-[9px] uppercase tracking-[1.5px] text-gold-light/80 truncate">
+            <p className="text-[9px] uppercase tracking-[1.5px] text-gold-deep/80 truncate">
               {portalName}
             </p>
           </div>
@@ -108,19 +112,36 @@ export function PortalShell({
 
         <SidebarNav nav={nav} />
 
+        {secondaryNav.length > 0 && (
+          <div className="px-3 pb-2 pt-1 border-t border-line/60">
+            <p className="px-3 pt-2 pb-1 text-[9px] uppercase tracking-[1.5px] text-muted">Autres espaces</p>
+            {secondaryNav.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="flex items-center gap-2.5 rounded-[8px] px-3 py-2 text-[12px] text-muted hover:text-ink hover:bg-ink/[0.03] transition-colors duration-300"
+              >
+                {item.icon && <span className="shrink-0 [&>svg]:block">{item.icon}</span>}
+                <span className="truncate flex-1">{item.label}</span>
+                <IconArrowRight size={11} className="shrink-0 opacity-60" />
+              </Link>
+            ))}
+          </div>
+        )}
+
         {sidebarExtra && (
-          <div className="px-3.5 pb-3 pt-1 border-t border-navy-3/60">
+          <div className="px-3.5 pb-3 pt-2 border-t border-line/60">
             {sidebarExtra}
           </div>
         )}
 
-        <div className="px-3.5 py-3.5 border-t border-navy-3/80 flex items-center gap-2.5">
+        <div className="px-3.5 py-3.5 border-t border-line/80 flex items-center gap-2.5">
           <Avatar name={userName || "?"} size={30} />
           <div className="min-w-0 flex-1">
-            <p className="text-[12px] text-cream truncate leading-tight">
+            <p className="text-[12px] text-ink truncate leading-tight">
               {userName}
             </p>
-            <p className="text-[9px] uppercase tracking-[1px] text-grey truncate">
+            <p className="text-[9px] uppercase tracking-[1px] text-muted truncate">
               {role ? (roleLabels[role] ?? role) : ""}
             </p>
           </div>
@@ -129,7 +150,7 @@ export function PortalShell({
               type="submit"
               aria-label="Déconnexion"
               title="Déconnexion"
-              className="p-1.5 rounded-[8px] text-grey hover:text-cream hover:bg-white/5 transition-colors duration-300 cursor-pointer"
+              className="p-1.5 rounded-[8px] text-muted hover:text-ink hover:bg-ink/5 transition-colors duration-300 cursor-pointer"
             >
               <IconLogout size={15} />
             </button>

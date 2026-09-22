@@ -3,13 +3,12 @@
 import { revalidatePath } from 'next/cache';
 import { staffContext, field, uuid, dateField, check } from '@/lib/operations/server';
 import { isRequestStatus, isServiceType, requestTransitions } from '@/lib/requests';
-import { slaDeadline } from '@/lib/catalog';
+import { parseEuros, slaDeadline } from '@/lib/catalog';
 import type { ActionResult } from '@/lib/operations/shared';
 
 function refreshRequests() {
-  revalidatePath('/concierge');
-  revalidatePath('/concierge/interventions');
-  revalidatePath('/admin');
+  revalidatePath('/concierge', 'layout');
+  revalidatePath('/admin', 'layout');
 }
 
 export async function createRequest(_: ActionResult, form: FormData): Promise<ActionResult> {
@@ -24,9 +23,11 @@ export async function createRequest(_: ActionResult, form: FormData): Promise<Ac
       .select('enabled, sla_minutes').eq('building_id', session.buildingId).eq('service', service).maybeSingle();
     check(catalogError);
     if (!catalog?.enabled) throw new Error('Ce service est désactivé pour cet immeuble.');
+    const amount = field(form, 'amount', false, 20);
     const { error } = await db.from('service_requests').insert({
       building_id: session.buildingId, resident_id: uuid(form, 'resident_id'), service, priority,
       payload: { description: field(form, 'description', true, 4000) },
+      amount_cents: amount ? parseEuros(amount) : null,
       sla_deadline: dateField(form, 'sla_deadline') ?? slaDeadline(catalog.sla_minutes, Date.now()),
     });
     if (error?.code === '23514') throw new Error('Ce service est désactivé pour cet immeuble.');

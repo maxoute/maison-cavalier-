@@ -15,7 +15,7 @@ export function SwitchBuildingButton({
   const router = useRouter();
   if (active) {
     return (
-      <span className="text-[10px] uppercase tracking-[1px] text-gold-light font-medium px-1">
+      <span className="text-[10px] uppercase tracking-[1px] text-gold-deep font-medium px-1">
         Actif
       </span>
     );

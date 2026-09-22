@@ -1,13 +1,24 @@
+import Link from 'next/link';
 import { QuoteActions } from '@/components/features/quote-actions';
 import { QuoteForm } from '@/components/features/quote-form';
+import { Badge, ServiceBadge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Disclosure } from '@/components/ui/disclosure';
+import { IconDoc } from '@/components/ui/icons';
 import { Select, Input } from '@/components/ui/input';
+import { EmptyState, PageHeader } from '@/components/ui/page-header';
+import { StatCard, StatGrid } from '@/components/ui/stat';
 import { requestsForStaff } from '@/lib/operations/requests';
-import { check } from '@/lib/operations/server';
+import { checkRead } from '@/lib/operations/server';
 import { quoteLabels, quoteMetrics } from '@/lib/quotes';
 import { serviceLabels } from '@/lib/requests';
+import { formatDateTime, formatDuration, formatMoney, formatShortDate, count } from '@/lib/format';
+import { cn } from '@/lib/cn';
 import type { Quote, ServiceType } from '@/types';
 
 type QuoteRow = Quote & { residents: { id: string; full_name: string } | null; service_requests: { service: ServiceType } | null };
+
+const statusTone: Record<string, 'grey' | 'blue' | 'green' | 'red'> = { en_attente: 'grey', envoye: 'blue', accepte: 'green', refuse: 'red' };
 
 export default async function DevisPage({ searchParams }: { searchParams: Promise<{ resident?: string; service?: string; status?: string }> }) {
   const filters = await searchParams;
@@ -16,38 +27,65 @@ export default async function DevisPage({ searchParams }: { searchParams: Promis
   for (let offset = 0; ; offset += 500) {
     const { data, error } = await db.from('quotes').select('*, residents!quotes_resident_tenant(id, full_name), service_requests!quotes_request_tenant(service)')
       .eq('building_id', session.buildingId).order('created_at', { ascending: false }).order('id').range(offset, offset + 499);
-    check(error); quotes.push(...((data ?? []) as unknown as QuoteRow[]));
+    checkRead(error); quotes.push(...((data ?? []) as unknown as QuoteRow[]));
     if (!data || data.length < 500) break;
   }
-  const requestOptions = requests.map(request => ({ id: request.id, label: `${request.residents?.full_name ?? 'Résident'} · ${serviceLabels[request.service]} · ${new Date(request.created_at).toLocaleDateString('fr-FR', { timeZone: 'UTC' })} · ${request.id.slice(0, 8)}` }));
+  const requestOptions = requests.filter(request => request.status !== 'termine').map(request => ({ id: request.id, label: `${request.residents?.full_name ?? 'Résident'} · ${serviceLabels[request.service]} · ${formatShortDate(request.created_at)}${typeof request.payload.description === 'string' ? ` · ${request.payload.description.slice(0, 40)}` : ''}` }));
   const metrics = quoteMetrics(quotes);
   const shown = quotes.filter(quote => (!filters.status || quote.status === filters.status)
     && (!filters.service || (quote.document_snapshot?.service ?? quote.service_requests?.service) === filters.service)
     && (!filters.resident || (quote.document_snapshot?.resident_name ?? quote.residents?.full_name ?? '').toLocaleLowerCase('fr-FR').includes(filters.resident.toLocaleLowerCase('fr-FR'))));
-  return <div className="space-y-6 text-base">
-    <header><h1 className="text-3xl">Devis</h1><p className="mt-2 text-grey">Propositions aux résidents, PDF et historique. Notifications en mode simulation.</p></header>
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      {[['Montant en cours', `${(metrics.pendingCents / 100).toLocaleString('fr-FR')} €`], ['Devis actifs', metrics.pendingCount], ['Taux d’acceptation (devis décidés)', metrics.acceptancePercent === null ? '—' : `${metrics.acceptancePercent} %`], ['Délai moyen d’acceptation', metrics.averageAcceptanceHours === null ? '—' : `${metrics.averageAcceptanceHours.toFixed(1)} h`]].map(([label, value]) => <div key={label} className="rounded-lg border border-navy-3 bg-navy-2 p-4"><p className="text-2xl">{value}</p><p className="text-grey">{label}</p></div>)}
-    </div>
-    <details className="rounded-lg border border-navy-3 p-4"><summary className="cursor-pointer">Créer un devis depuis une demande</summary><div className="mt-4 max-w-xl"><QuoteForm requests={requestOptions} /></div></details>
-    <form className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      <label className="space-y-1"><span>Résident</span><Input name="resident" type="search" placeholder="Rechercher un nom" defaultValue={filters.resident ?? ''} /></label>
-      <label className="space-y-1"><span>Service</span><Select name="service" defaultValue={filters.service ?? ''}><option value="">Tous les services</option>{Object.entries(serviceLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></label>
-      <label className="space-y-1"><span>Statut</span><Select name="status" defaultValue={filters.status ?? ''}><option value="">Actifs et archives</option>{Object.entries(quoteLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></label>
-      <button className="self-end rounded-3xl border border-navy-3 px-4 py-3" type="submit">Filtrer</button>
+  const filtering = Boolean(filters.status || filters.service || filters.resident);
+  return <div className="space-y-6 fade-up">
+    <PageHeader title="Devis" subtitle="Propositions aux résidents avec PDF au format Maison Cavalier, validation en un clic et historique par résident." />
+    <StatGrid>
+      <StatCard value={formatMoney(metrics.pendingCents, { round: true })} label="montant en cours" accent="gold" icon={IconDoc} />
+      <StatCard value={metrics.pendingCount} label="devis actifs" accent="blue" />
+      <StatCard value={metrics.acceptancePercent === null ? '—' : `${metrics.acceptancePercent} %`} label="taux d’acceptation" accent="green" hint="sur les devis décidés" />
+      <StatCard value={metrics.averageAcceptanceHours === null ? '—' : formatDuration(metrics.averageAcceptanceHours * 60)} label="délai moyen d’acceptation" accent="violet" />
+    </StatGrid>
+    <Disclosure summary="Créer un devis depuis une demande" hint="PDF généré automatiquement">
+      <div className="max-w-2xl"><QuoteForm requests={requestOptions} /></div>
+    </Disclosure>
+    <form className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_auto] rounded-[8px] border border-line bg-surface p-3">
+      <Input name="resident" type="search" placeholder="Rechercher un résident" defaultValue={filters.resident ?? ''} aria-label="Résident" className="text-[12.5px] py-2" />
+      <Select name="service" defaultValue={filters.service ?? ''} aria-label="Service" className="text-[12.5px] py-2"><option value="">Tous les services</option>{Object.entries(serviceLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select>
+      <Select name="status" defaultValue={filters.status ?? ''} aria-label="Statut" className="text-[12.5px] py-2"><option value="">Actifs et archives</option>{Object.entries(quoteLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select>
+      <div className="flex items-center gap-2"><Button type="submit" variant="outline" size="sm">Filtrer</Button>{filtering && <Link href="/concierge/devis" className="text-[11px] text-muted hover:text-ink underline underline-offset-4">Réinitialiser</Link>}</div>
     </form>
-    <p className="text-grey">{shown.length} devis affiché(s). Les décisions sont enregistrées par la conciergerie après échange avec le résident.</p>
-    <div className="grid gap-4 lg:grid-cols-2">{shown.map(quote => <article key={quote.id} className="min-w-0 rounded-lg border border-navy-3 bg-navy-2 p-5 space-y-3">
-      <h2 className="text-xl">{quote.document_snapshot?.resident_name ?? quote.residents?.full_name ?? 'Résident à rattacher'} · {quoteLabels[quote.status]}</h2>
-      <p className="whitespace-pre-wrap break-words">{quote.label}</p>
-      <p>{quote.provider} · {quote.amount_cents == null ? 'Montant à renseigner' : `${(quote.amount_cents / 100).toLocaleString('fr-FR')} €`}</p>
-      <p className="text-grey">Créé le {new Date(quote.created_at).toLocaleString('fr-FR', { timeZone: 'UTC' })} UTC</p>
-      {quote.sent_at && <p className="text-grey">Envoi simulé le {new Date(quote.sent_at).toLocaleString('fr-FR', { timeZone: 'UTC' })} UTC</p>}
-      {quote.decided_at && <p className="text-grey">Décision enregistrée le {new Date(quote.decided_at).toLocaleString('fr-FR', { timeZone: 'UTC' })} UTC</p>}
-      {quote.amount_cents != null && quote.resident_id && <a href={`/api/quotes/${quote.id}/pdf`} className="inline-block rounded-3xl border border-navy-3 px-4 py-2 hover:bg-navy">Télécharger le PDF</a>}
-      {quote.status === 'en_attente' && <details><summary className="cursor-pointer underline underline-offset-4">Compléter ou modifier le devis</summary><div className="mt-3"><QuoteForm quote={quote} requests={requestOptions} /></div></details>}
-      <QuoteActions id={quote.id} status={quote.status} version={quote.updated_at} />
-    </article>)}</div>
-    {!shown.length && <p>Aucun devis ne correspond aux filtres.</p>}
+    <p className="text-[11px] text-muted">{count(shown.length, 'devis', 'devis')} affiché{shown.length > 1 ? 's' : ''} · les décisions sont enregistrées par la conciergerie après échange avec le résident.</p>
+    {!shown.length && <EmptyState title="Aucun devis ne correspond aux filtres." />}
+    <div className="grid gap-3 lg:grid-cols-2">{shown.map(quote => {
+      const service = quote.document_snapshot?.service ?? quote.service_requests?.service ?? null;
+      const residentName = quote.document_snapshot?.resident_name ?? quote.residents?.full_name;
+      const decided = quote.status === 'accepte' || quote.status === 'refuse';
+      return <article key={quote.id} className={cn('min-w-0 rounded-[8px] border bg-surface p-4 space-y-3 shadow-[0_1px_2px_rgba(10,22,40,.04)]', decided ? 'border-line opacity-90' : 'border-line')}>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-1.5 mb-1">
+              {service && <ServiceBadge service={service} />}
+              {quote.source === 'email' && <Badge tone="violet">Reçu par email</Badge>}
+            </div>
+            <h3 className="text-[15px] leading-snug">
+              {quote.residents ? <Link href={`/concierge/residents/${quote.residents.id}`} className="hover:text-gold-deep transition-colors duration-300">{residentName}</Link> : residentName ?? <span className="text-muted">Résident à rattacher</span>}
+            </h3>
+          </div>
+          <Badge tone={statusTone[quote.status]}>{quoteLabels[quote.status]}</Badge>
+        </div>
+        <p className="text-[12.5px] text-ink/85 whitespace-pre-wrap break-words">{quote.label}</p>
+        <p className="text-[12.5px]"><span className="text-muted">{quote.provider}</span> · <span className="font-medium text-ink">{quote.amount_cents == null ? 'Montant à renseigner' : formatMoney(quote.amount_cents)}</span></p>
+        <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted">
+          <span>Créé {formatDateTime(quote.created_at)}</span>
+          {quote.sent_at && <span>· Envoyé {formatDateTime(quote.sent_at)}</span>}
+          {quote.decided_at && <span>· Décision {formatDateTime(quote.decided_at)}</span>}
+          {quote.email_from && <span>· De {quote.email_from}</span>}
+        </div>
+        <div className="flex flex-wrap items-center gap-2 pt-1">
+          {quote.amount_cents != null && quote.resident_id && <a href={`/api/quotes/${quote.id}/pdf`} target="_blank" rel="noopener noreferrer"><Button type="button" variant="outline" size="sm"><IconDoc size={11} /> PDF</Button></a>}
+          <QuoteActions id={quote.id} status={quote.status} version={quote.updated_at} />
+        </div>
+        {quote.status === 'en_attente' && <Disclosure variant="inline" summary="Compléter ou modifier le devis"><QuoteForm quote={quote} requests={requestOptions} /></Disclosure>}
+      </article>;
+    })}</div>
   </div>;
 }

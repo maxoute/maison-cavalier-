@@ -24,8 +24,8 @@ export function SidebarNav({ nav }: { nav: NavItem[] }) {
               "relative flex items-center gap-2.5 rounded-[8px] px-3 py-2.5 text-[12.5px] font-medium",
               "transition-colors duration-300",
               isActive
-                ? "text-gold-light bg-gold/[0.09]"
-                : "text-grey hover:text-cream hover:bg-white/[0.04]",
+                ? "text-gold-deep bg-gold/[0.09]"
+                : "text-muted hover:text-ink hover:bg-ink/[0.03]",
             )}
           >
             {isActive && (

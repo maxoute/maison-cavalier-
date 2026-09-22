@@ -1,46 +1,42 @@
-# État de reprise — 21 septembre 2026
+# État de reprise — 22 septembre 2026 (veille de démonstration)
 
 ## Contexte
 
-La reprise s'appuie sur le dépôt et `docs/developpement.md` ; l'historique conversationnel des sessions précédentes n'est pas disponible. De nombreuses modifications locales antérieures existent (WhatsApp, colis, pressing, recommandations, documents syndic, demandes, annonces, interventions, devis, déploiement) : elles sont conservées et ne sont pas réputées déployées.
+Démonstration complète de l'application prévue le 23 septembre 2026 : toutes les fonctionnalités de base doivent fonctionner sur les trois portails. La session a consisté en un audit complet (code, RLS, parcours navigateur), le passage en **mode clair**, l'uniformisation des écrans opérationnels et la réalisation des cinq écrans jusque-là vides (Immeubles, Utilisateurs, Finance, Reporting syndic, Live Map).
 
-## Travail de cette session
+## Environnement de démonstration
 
-Paramétrage services & tarifs (PRD §6.3.4) et configuration par immeuble (§6.3.2) :
+- Stack locale : `npx supabase start` puis `npx supabase db reset` (12 migrations + seed), `.env.local` généré depuis `npx supabase status` (URL, clé anon, clé service-role, `CRON_SECRET`).
+- `npm run dev` sur http://localhost:3000 ; comptes `concierge@demo.mc`, `admin@demo.mc`, `super@demo.mc`, `syndic@demo.mc`, `concierge3@demo.mc` (mot de passe `cavalier123`).
+- Le seed a été enrichi pour que les écrans ne soient pas vides : annonces, documents syndic, incidents d'intervention (dont un grave, résolu, qui alimente le fil syndic), courses chauffeur, montants et commissions des réservations partenaires.
+- La MFA reste désactivée (`mfaRequiredRoles = []`) : aucun compte de démo n'a de TOTP enrôlé ; les écrans `/login/mfa*` proposent désormais un retour à la connexion.
 
-- Migration `20260921000001_service_catalog.sql` : `building_services` (activation, unité fixe/km/heure, tarif, commission, prestataire local, engagement SLA) et `notification_templates`, tous deux porteurs de `building_id` et de leurs policies. Lecture par le staff de l'immeuble, écriture réservée aux gestionnaires (`public.manages`), syndic exclu, audit sur les deux tables.
-- Le catalogue est provisionné par trigger à la création d'un immeuble, et `buildings.enabled_services` est recalculé depuis lui : une seule vérité pour les services ouverts.
-- Un service fermé refuse toute nouvelle demande en base, pas seulement dans l'écran.
-- Écran `/admin/services` : catalogue éditable, commissions estimées sur les demandes terminées, modèles de notification de l'immeuble. Le super-admin agit sur l'immeuble sélectionné dans la barre latérale (`lib/admin/server.ts`).
-- La création d'une demande lit le catalogue : service fermé refusé, échéance SLA par défaut issue de l'engagement configuré.
-- Les modèles d'annonce du concierge combinent les modèles de l'immeuble et les modèles intégrés.
+## Audit et corrections
+
+Constats de l'audit (détail dans `docs/developpement.md`) et corrections apportées :
+
+- **Suppression d'une fiche résident** : provoquait une page d'erreur (violation de clé étrangère) pour tout résident ayant un historique. Les actions résident renvoient désormais un `ActionResult` affiché en ligne, la suppression est confirmée dans une boîte de dialogue et refusée proprement quand un historique existe.
+- **Super-admin** : les résidents, la fiche résident et le fil syndic n'étaient pas filtrés par immeuble (mélange des huit immeubles). `getSession` résout maintenant l'immeuble actif (cookie `mc-building`, validé en base) pour le super-admin, et tous les portails le suivent ; sélecteur d'immeuble ajouté à la barre latérale concierge.
+- **Navigation entre portails** : liens « Autres espaces » (administration, espace concierge, portail syndic) selon le rôle ; libellés anglais remplacés (« Administration », « Tableau de bord »).
+- **Montant facturé** : `service_requests.amount_cents` n'était écrit nulle part ; il est saisissable à la création d'une demande et dans le formulaire prestataire d'une intervention, ce qui alimente les revenus du tableau de bord et de la finance.
+- **Colis** : transition « Retour transporteur » exposée (elle existait en base).
+- **Dates** : les champs `datetime-local` sont saisis en heure de Paris et stockés en UTC (`parseParisDateTime`, testé) ; tous les affichages passent par `lib/format.ts` (dates relatives, durées humanisées, montants).
+- **Frontières d'erreur** : `app/error.tsx`, `app/not-found.tsx`, `app/syndic/error.tsx` ajoutés ; les erreurs de lecture distinguées des erreurs d'écriture (`checkRead`).
+- Divers : libellé de service unifié (« Personal shopper »), rouge hors charte corrigé, `rel="noopener"` sur les liens WhatsApp, manifeste PWA démarrant sur `/`, icônes de navigation distinctes.
+
+## Mode clair et système de composants
+
+- `app/globals.css` : tokens sémantiques (`--page`, `--surface`, `--surface-2`, `--line`, `--ink`, `--muted`, `--gold-deep`) exposés en classes Tailwind (`bg-page`, `bg-surface`, `border-line`, `text-ink`, `text-muted`, `text-gold-deep`). Le navy et l'or restent les couleurs de marque (sceau, bouton principal).
+- Nouveaux composants partagés : `PageHeader` / `SectionTitle` / `EmptyState` (`components/ui/page-header.tsx`), `StatCard` / `StatGrid` / `Meter` (`components/ui/stat.tsx`), `Disclosure` (`components/ui/disclosure.tsx`), `OperationForm` avec variante de bouton, boutons d'action rapide basés sur `Button`.
+- Tous les écrans opérationnels (demandes, interventions, colis, pressing, WhatsApp, devis, recommandations, annonces, documents et messagerie syndic, résidents) ont été réécrits sur ce gabarit : en-tête uniforme, indicateurs, formulaires repliables, badges de statut et de service, un seul bouton or par écran.
+
+## Écrans réalisés
+
+_Section complétée à la fin de la session avec le résultat des trois chantiers parallèles : Immeubles + Utilisateurs, Finance + Reporting syndic, Live Map._
 
 ## Vérifications
 
-- ESLint, TypeScript et `npm run build -- --webpack` : réussis.
-- `npm run test:unit` : 12 tests, dont les 5 nouveaux sur tarifs, commissions, SLA et formats (`lib/catalog.ts`).
-- Suite RLS complète (catalogue inclus) : verte sur la base E2E et sur une base vierge rejouée `mc_verify_20260921` (8 migrations + seed complet).
-- Playwright, 19 contrôles sur la stack E2E servie en build de production : réglage des tarifs, refus d'une commission > 100 %, fermeture/réouverture d'un service et effet immédiat en loge, SLA par défaut, modèles proposés au concierge, refus concierge et syndic sur `/admin/services`, super-admin sur un autre immeuble, aucune erreur JS. Détail dans `docs/developpement.md`.
-- Correction de la suite RLS : le contrôle des notifications d'incident grave comparait un effectif absolu et échouait sur toute base portant déjà des incidents.
-
-## Deuxième temps de la session — demandes du client
-
-Quatre demandes relayées : chat WhatsApp, gestion des colis, recommandations affiliées, pressing avec interface syndic et devis par mail. Les trois premières existaient partiellement, la quatrième était déjà en place (fil syndic et devis d'immeuble, saisie manuelle du mail reçu). Trois chantiers retenus :
-
-- **Colis** : preuve photo dans un bucket Storage privé (`colis`, policies par immeuble, URL signées de 120 s), prise de vue directe depuis la tablette, créneau de remise corrigeable tant que le colis est en loge et figé après remise, preuve non effaçable, rappel J+2 unique par colis — déclenchable en loge ou par `POST /api/rappels/colis` avec `CRON_SECRET`.
-- **Affiliations** : partenaire et taux saisissables, suivi du devenir de chaque partage (consultée, réservée, refusée) gardé en base, commission figée à la réservation d'après le taux du moment, revenus par adresse et compteurs d'immeuble.
-- **WhatsApp entrant** : route `POST /api/whatsapp/webhook` à signature `X-Hub-Signature-256` vérifiée sur le corps brut, vérification d'abonnement en `GET`, idempotence sur `wamid`, rattachement du numéro au bon résident (neuf derniers chiffres, refus si inconnu ou porté par deux immeubles), accusés de livraison sans régression d'état, badge non lu et marquage de lecture. Le provider Meta Cloud API remplace le mock dès que les quatre variables `WHATSAPP_*` sont présentes ; il en manque une et tout reste simulé.
-
-Vérifications : 27 contrôles navigateur et webhook réussis, quatre nouvelles migrations, suite RLS étendue (colis, affiliations, WhatsApp) verte sur la base E2E et sur une base vierge rejouée, 17 tests unitaires.
-
-## Suite
-
-Ordre de poursuite mis à jour dans `docs/developpement.md` :
-
-1. Onboarding d'un immeuble (< 5 min) et gestion utilisateurs/affectations via route handler à privilèges, puis contexte super-admin sur les autres écrans admin.
-2. Reporting syndic, puis voiturier/Plan B.
-3. Paiement Stripe/Connect avec tests sandbox, qui rendra réelles les commissions aujourd'hui estimées.
-4. Ingestion automatique des devis reçus par mail (écartée à l'arbitrage du 21/09, la saisie reste manuelle), pièces jointes Storage côté syndic et pressing, fidélité, exports.
-5. Vérifier chaque critère d'acceptation en navigateur et sur Supabase, puis préparer la livraison.
-
-Les intégrations SMS et email restent simulées ; WhatsApp est prêt des deux côtés et attend l'ouverture du compte Business. Aucune migration n'a été appliquée à un environnement de production.
+- `npx tsc --noEmit`, `npm run lint`, `npm run test:unit` (tests étendus : heure de Paris, SLA humanisé).
+- `npm run test:rls` : suite complète verte sur la base locale rejouée.
+- `.playwright-mcp/crawl.mjs` : toutes les routes, cinq rôles, aucun écran en erreur, aucune erreur JavaScript, refus d'accès corrects.
+- `.playwright-mcp/flows.mjs` : 31 contrôles de bout en bout réussis (création/modification/suppression résident, cycle complet d'une demande avec montant, colis reçu → stocké → retourné, collecte pressing, devis créé → PDF → envoyé → accepté, intervention assignée + incident signalé et résolu, annonce, fil WhatsApp, recommandation partagée, message et document syndic, isolation syndic, bascule d'immeuble du super-admin).

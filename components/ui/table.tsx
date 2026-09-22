@@ -5,8 +5,8 @@ export function Table({
   ...props
 }: React.TableHTMLAttributes<HTMLTableElement>) {
   return (
-    <div className="overflow-x-auto rounded-[8px] border border-navy-3 bg-navy-2">
-      <table className={cn("w-full text-left text-sm text-cream", className)} {...props} />
+    <div className="overflow-x-auto rounded-[8px] border border-line bg-surface">
+      <table className={cn("w-full text-left text-sm text-ink", className)} {...props} />
     </div>
   );
 }
@@ -18,7 +18,7 @@ export function THead({
   return (
     <thead
       className={cn(
-        "text-grey uppercase text-[10px] tracking-[1.5px] border-b border-navy-3",
+        "text-muted uppercase text-[10px] tracking-[1.5px] border-b border-line",
         className,
       )}
       {...props}
@@ -30,7 +30,7 @@ export function TBody({
   className,
   ...props
 }: React.HTMLAttributes<HTMLTableSectionElement>) {
-  return <tbody className={cn("divide-y divide-navy-3/60", className)} {...props} />;
+  return <tbody className={cn("divide-y divide-line/60", className)} {...props} />;
 }
 
 export function TR({
@@ -38,7 +38,7 @@ export function TR({
   ...props
 }: React.HTMLAttributes<HTMLTableRowElement>) {
   return (
-    <tr className={cn("hover:bg-navy-3/40 transition-colors duration-300", className)} {...props} />
+    <tr className={cn("hover:bg-surface-2/70 transition-colors duration-300", className)} {...props} />
   );
 }
 

@@ -513,3 +513,81 @@ insert into public.notification_templates (building_id, slug, label, title, body
   ('11111111-1111-1111-1111-111111111111', 'travaux', 'Travaux (Le Marly)',
    'Travaux dans votre immeuble',
    'Des travaux sont prévus le [date] de [heure] à [heure] dans [zone]. La loge organise vos accès et la réception de vos colis pendant la période.');
+
+-- ---------- Annonces, documents syndic, incidents et courses (Le Marly) ----------
+-- Données de démonstration des modules communication, syndic, interventions
+-- et Live Map : les demandes portent des identifiants aléatoires, d'où les
+-- sous-requêtes.
+insert into public.announcements (building_id, created_by, title, body, target_floor, target_owner_status, urgent, created_at) values
+  ('11111111-1111-1111-1111-111111111111', 'aaaaaaaa-0000-0000-0000-000000000001', 'Ravalement de la façade cour',
+   'Des travaux de ravalement sont prévus du 28 septembre au 16 octobre, de 8h à 17h, côté cour. Un échafaudage sera installé ; votre concierge organise vos accès et la réception de vos colis pendant la période.',
+   null, null, false, now() - interval '6 days'),
+  ('11111111-1111-1111-1111-111111111111', 'aaaaaaaa-0000-0000-0000-000000000001', 'Coupure d’eau programmée',
+   'L’eau sera coupée le jeudi 24 septembre de 9h à 12h dans l’ensemble de l’immeuble pour le remplacement d’une vanne. Des bouteilles sont à votre disposition à la loge.',
+   null, null, true, now() - interval '2 days'),
+  ('11111111-1111-1111-1111-111111111111', 'aaaaaaaa-0000-0000-0000-000000000001', 'Assemblée générale des copropriétaires',
+   'L’assemblée générale se tiendra le 24 juillet à 18h30 en salle de réunion. Les convocations ont été envoyées par le syndic ; la loge tient les pouvoirs à votre disposition.',
+   null, 'proprietaire', false, now() - interval '1 day');
+
+insert into public.building_documents (building_id, title, provider, body, amount_cents, email_from, email_message_id, created_by, created_at) values
+  ('11111111-1111-1111-1111-111111111111', 'Remplacement du moteur de la porte du parking', 'Portes & Automatismes Paris',
+   'Devis n° DEV-2026-118 : dépose du moteur existant, fourniture et pose d’un moteur FAAC 24 V avec cellules de sécurité, mise en conformité et garantie 2 ans. Intervention sous 10 jours ouvrés après acceptation.',
+   485000, 'devis@portes-automatismes.fr', 'DEV-2026-118@portes-automatismes.fr', 'aaaaaaaa-0000-0000-0000-000000000001', now() - interval '4 days'),
+  ('11111111-1111-1111-1111-111111111111', 'Contrôle annuel des extincteurs et BAES', 'Sécurité Incendie Île-de-France',
+   'Vérification réglementaire des 24 extincteurs et 18 blocs autonomes d’éclairage de sécurité, remplacement des éléments hors service et remise du registre de sécurité.',
+   68000, 'contact@sii-df.fr', 'CTRL-2026-0921@sii-df.fr', 'aaaaaaaa-0000-0000-0000-000000000001', now() - interval '1 day');
+
+insert into public.intervention_incidents (building_id, request_id, reported_by, kind, severity, description, created_at)
+select '11111111-1111-1111-1111-111111111111', id, 'aaaaaaaa-0000-0000-0000-000000000001', 'retard', 'standard',
+  'Le pressing annonce 24 h de retard sur le retour : machine en panne chez le prestataire. Résident prévenu par WhatsApp.', now() - interval '3 hours'
+from public.service_requests where building_id = '11111111-1111-1111-1111-111111111111' and service = 'pressing' and status = 'en_cours'
+order by created_at desc limit 1;
+
+insert into public.intervention_incidents (building_id, request_id, reported_by, kind, severity, description, created_at)
+select '11111111-1111-1111-1111-111111111111', id, 'aaaaaaaa-0000-0000-0000-000000000001', 'technique', 'grave',
+  'Panne de l’ascenseur principal pendant la livraison des places : technicien Otis appelé, remise en service prévue sous 4 h.', now() - interval '2 days'
+from public.service_requests where building_id = '11111111-1111-1111-1111-111111111111' and service = 'billetterie' and status = 'en_cours'
+order by created_at desc limit 1;
+
+update public.intervention_incidents set resolution = 'Ascenseur remis en service par Otis à 17h40, contrôle de la carte de commande effectué.',
+  resolved_by = 'aaaaaaaa-0000-0000-0000-000000000001', resolved_at = now() - interval '1 day 18 hours'
+where building_id = '11111111-1111-1111-1111-111111111111' and severity = 'grave' and resolved_at is null;
+
+insert into public.driver_trips (building_id, request_id, vehicle, status, origin, destination, last_lat, last_lng, eta, created_at)
+select '11111111-1111-1111-1111-111111111111', id, 'Berline Mercedes Classe S', 'en_route', '12 avenue Montaigne, Paris 8e', 'Aéroport CDG, Terminal 2E',
+  48.8862, 2.3610, now() + interval '25 minutes', now() - interval '20 minutes'
+from public.service_requests where building_id = '11111111-1111-1111-1111-111111111111' and service = 'chauffeur' and status = 'en_cours'
+order by created_at desc limit 1;
+
+insert into public.driver_trips (building_id, request_id, vehicle, status, origin, destination, last_lat, last_lng, eta, created_at)
+select '11111111-1111-1111-1111-111111111111', id, 'Van Mercedes Classe V', 'acceptee', '12 avenue Montaigne, Paris 8e', 'Gare de Lyon',
+  48.8664, 2.3079, now() + interval '40 minutes', now() - interval '4 minutes'
+from public.service_requests where building_id = '11111111-1111-1111-1111-111111111111' and service = 'chauffeur' and status = 'nouveau'
+order by created_at desc limit 1;
+
+-- Montants des réservations suivies (Le Marly) : commission figée au taux du partenaire.
+-- Le trigger fige les montants hors transition ; on le suspend le temps du seed.
+alter table public.recommendation_shares disable trigger recommendation_share_transition;
+update public.recommendation_shares s set
+  booking_amount_cents = v.amount,
+  commission_cents = case when r.is_partner and r.commission_rate is not null then round(v.amount * r.commission_rate / 100)::integer else 0 end
+from (values ('Le Petit Marius', 18600), ('Atelier Bertin', 42000), ('Aéro Prestige', 14500)) as v(name, amount)
+join public.recommendations r on r.name = v.name and r.building_id = '11111111-1111-1111-1111-111111111111'
+where s.recommendation_id = r.id and s.status = 'reservee' and coalesce(s.booking_amount_cents, 0) = 0;
+alter table public.recommendation_shares enable trigger recommendation_share_transition;
+
+-- Historique : les demandes terminées sont réparties sur les six derniers mois
+-- (déterministe) avec une date de réalisation cohérente, pour que les
+-- tendances finance et reporting ne se limitent pas au mois courant.
+with shifted as (
+  select id,
+    ((abs(hashtext(id::text)) % 170) + 1) * interval '1 day' + (abs(hashtext(id::text)) % 24) * interval '1 hour' as delta,
+    ((abs(hashtext(id::text)) % 150) + 15) * interval '1 minute' as duration
+  from public.service_requests where status = 'termine'
+)
+update public.service_requests r set
+  created_at = r.created_at - s.delta,
+  sla_deadline = r.sla_deadline - s.delta,
+  started_at = coalesce(r.started_at, r.created_at) - s.delta + interval '5 minutes',
+  completed_at = coalesce(r.completed_at, r.created_at) - s.delta + s.duration
+from shifted s where s.id = r.id;

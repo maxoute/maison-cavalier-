@@ -1,8 +1,8 @@
 import { cn } from "@/lib/cn";
 
 const fieldStyles =
-  "w-full rounded-[8px] border border-navy-3 bg-navy-2 px-3.5 py-2.5 text-cream " +
-  "placeholder:text-grey/60 " +
+  "w-full rounded-[8px] border border-line bg-surface px-3.5 py-2.5 text-ink " +
+  "placeholder:text-muted/60 " +
   "focus:outline-none focus:ring-2 focus:ring-gold/40 focus:border-gold/40 " +
   "transition-shadow duration-300";
 
@@ -20,7 +20,7 @@ export function Label({
   return (
     <label
       className={cn(
-        "block text-[11px] uppercase tracking-[1px] text-grey mb-1.5",
+        "block text-[11px] uppercase tracking-[1px] text-muted mb-1.5",
         className,
       )}
       {...props}

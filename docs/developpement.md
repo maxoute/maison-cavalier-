@@ -15,31 +15,35 @@ Objectif : développer l’application web Maison Cavalier de A à Z selon `.CLA
 | Exigence PRD | État observé | Travail / preuve restant nécessaire |
 | --- | --- | --- |
 | §4–5 Rôles et isolation multi-tenant | Policies et tests SQL présents ; suite locale verte | Couvrir tous les nouveaux modules et tous les rôles au fur et à mesure ; tester les URL avec sessions réelles |
-| §6.1.1 Demandes / Kanban | Création, filtres, statuts, compteur SLA et abonnement Realtime codés ; échéance SLA par défaut issue du catalogue, vérifiée en navigateur le 21/09 | Tests navigateur multi-session, réception WebSocket et volume |
+| §6.1.1 Demandes / Kanban | Kanban temps réel réécrit en mode clair (badges service, minuteur SLA humanisé, actions rapides, montant facturé saisissable), vérifié de bout en bout le 22/09 | Tests multi-session et volume |
 | §6.1.1 Chat WhatsApp opérationnel | Fils par résident, envoi via le contrat provider, **réception** par webhook signé (vérification d'abonnement, idempotence `wamid`, rattachement du numéro au bon immeuble, refus si numéro inconnu ou ambigu), badge non lu ; provider Meta Cloud API retenu dès que les quatre variables sont présentes — vérifié de bout en bout le 21/09 avec une signature locale | Ouverture du compte WhatsApp Business, médias entrants, modèles validés hors fenêtre 24 h |
 | §6.1.2 Live Map | Démonstration statique | Contrat provider, données chauffeurs, positions, sélection/suivi, filtres, vérification latence |
 | §6.1.3 Voiturier | Table courses présente | Attribution manuelle/automatique, acceptation, notifications, alerte Plan B après 3 minutes |
-| §6.1.4 Pressing / colis | Registres, transitions, notifications simulées, planning semaine ; preuve photo dans un bucket privé, prise directe depuis la tablette, créneau corrigeable tant que le colis est en loge, rappel J+2 unique (loge ou ordonnanceur) — vérifié en navigateur le 21/09 | Rappels et notifications réellement envoyés (providers), preuves côté pressing |
-| §6.1.5 CRM | Fiches, création, import CSV et historique présents ; recommandations affiliées (partenaire, taux, suivi consultée/réservée/refusée, commission figée à la réservation) vérifiées le 21/09 | Vérifier import/doublons/erreurs, insights, score post-service et templates contact ; reversement réel des commissions avec Stripe |
-| §6.1.6 Devis | Création depuis une demande, modification tant qu’en attente, PDF serveur, transitions gardées en SQL, indicateurs de conversion ; vérifié en navigateur le 18/09 | Notifications réelles, délai d’acceptation mesuré sur des envois réels |
-| §6.1.7 Interventions | Prestataire, fin prévue, début/fin, incidents avec alerte syndic générique, résolution, métriques ; vérifié en navigateur le 18/09 | Liaison à la capture de paiement (Stripe), notifications réelles |
-| §6.1.8 Messagerie syndic | Fil dédié et documents immeuble séparés des devis privés | Pièces jointes Storage, escalade urgence, traçabilité/signature et tests navigateur |
-| §6.1.9 Annonces | Modèles, ciblage étage/occupation, notifications simulées atomiques et historique | Écran d’accueil immeuble, providers réels quand disponibles, tests navigateur |
+| §6.1.4 Pressing / colis | Registres et planning hebdomadaire en heure de Paris, indicateurs, retour transporteur, preuve photo, rappels J+2 — parcours vérifiés le 22/09 | Notifications réelles (providers), preuves côté pressing |
+| §6.1.5 CRM | Fiches, création/modification avec erreurs en ligne, suppression confirmée et refusée proprement en présence d’historique, insight automatique, filtrage par immeuble (super-admin) — vérifié le 22/09 | Score post-service saisi depuis l’app mobile, reversement réel des commissions |
+| §6.1.6 Devis | Écran réécrit (badges, PDF, actions), création → envoi → acceptation vérifiés le 22/09 | Notifications réelles, rattachement d’un devis reçu par e-mail sans demande existante |
+| §6.1.7 Interventions | Kanban réécrit, prestataire + fin prévue + montant, incidents signalés et résolus — vérifié le 22/09 | Liaison à la capture de paiement (Stripe) |
+| §6.1.8 Messagerie syndic | Fil cloisonné par immeuble, documents partagés, incidents graves escaladés — vérifié le 22/09 côté concierge et syndic | Pièces jointes Storage, signature numérique |
+| §6.1.9 Annonces | Formulaire avec modèles, audience calculée en direct, historique — vérifié le 22/09 | Écran d’accueil immeuble, providers réels |
 | §6.2 Portail syndic | Messagerie et documents présents, reporting vide | Reporting agrégé sans données privées, notifications urgentes et tests URL |
 | §6.3.1 Dashboard global | Quelques agrégats et liste immeubles | KPIs complets, séries temporelles, SLA, satisfaction, alertes et comparaison |
 | §6.3.2 Immeubles | Page vide ; sélecteur de cookie présent ; configuration par immeuble (services, tarifs, prestataire local) et contexte super-admin effectif sur `/admin/services`, vérifiés le 21/09 | Onboarding d’un immeuble, affectations de concierges, contexte super-admin sur les autres écrans admin et exports par immeuble |
 | §6.3.3 Utilisateurs | Page vide ; import résident disponible côté CRM | Création/désactivation Auth via API serveur, rôles/affectations, journal consultable |
 | §6.3.4 Services et tarifs | Catalogue par immeuble (activation, unité fixe/km/heure, tarif, commission, prestataire, SLA), modèles de notification et commissions estimées ; écriture réservée aux gestionnaires, vérifié en navigateur et en SQL le 21/09 | Application du tarif aux montants facturés et aux devis, commissions réelles avec Stripe, exports |
 | §6.3.5 Finance | Page vide | Transactions Stripe, remboursements/litiges, commissions, reversements et exports |
-| §7.1 Authentification/MFA | Login et écrans TOTP présents | `mfaRequiredRoles` est actuellement vide dans les changements antérieurs : obligation MFA non satisfaite ; valider le parcours et le choix TOTP/SMS avant livraison |
+| §7.1 Authentification/MFA | Login, écrans TOTP avec retour à la connexion ; MFA volontairement désactivée pour la démo (aucun compte enrôlé) | Activer `mfaRequiredRoles` après enrôlement des comptes réels |
 | §7.2 Stripe et Connect | Non implémenté | Modèle paiement, idempotence, webhooks signés, capture après validation, reçus, Connect, tests sandbox |
 | §7.3 Notifications | Interfaces et mocks, journal et triggers de simulation | Providers réels, préférences/consentements, erreurs/reprises, délivrabilité et délai push |
 | §7.4 Reporting | Page vide | Génération mensuelle, agrégats sûrs, accès admin/syndic et exports |
 | §9 Non-fonctionnel | Build et tests partiels | Accessibilité navigateur, performances, latences, sauvegardes/restauration, RGPD et audit complet |
-| §10 Design | Composants et charte présents | Contrôler chaque écran : contrastes, texte ≥16 px, responsive, accent or unique |
+| §10 Design | Mode clair (crème/blanc, navy, or unique), tokens sémantiques, composants partagés (`PageHeader`, `StatCard`, `Disclosure`, `Badge`, `Button`) appliqués à tous les écrans le 22/09 | Contrôle contraste automatisé, responsive tablette en conditions réelles |
 | §11 / annexe B Intégrations et contrat mobile | Types et tables partagés présents | API/webhooks partenaires, droits résident/chauffeur, contrats et compatibilité ; applications mobiles hors périmètre web |
 | §12 Fidélité / Personal Shopper | Champ points et service générique présents | Parcours missions shopper, validation, règles de fidélité et administration |
 | Déploiement et livraison | Docker/compose présents ; migrations et seed rejoués dans une base PostgreSQL vierge | Tester stack Supabase, staging authentifié et production ; ne pas confondre code local et déployé |
+
+## Vérification du 22 septembre 2026 — audit, mode clair, écrans réalisés
+
+Voir `docs/reprise.md` (état de reprise du 22 septembre) : audit complet, corrections (suppression résident, isolation super-admin, montants facturés, dates en heure de Paris, frontières d’erreur), mode clair, réécriture des écrans opérationnels, et vérifications (`crawl.mjs` toutes routes/tous rôles, `flows.mjs` 31 contrôles de bout en bout, RLS, unitaires).
 
 ## Dernières vérifications
 

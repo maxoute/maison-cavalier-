@@ -1,26 +1,21 @@
 import { signOut } from "@/app/actions/auth";
+import { Button } from "@/components/ui/button";
+import { Seal } from "@/components/ui/seal";
 
 export default function AccessDeniedPage() {
   return (
-    <main className="flex-1 flex items-center justify-center bg-navy p-6">
-      <div className="text-center max-w-md">
-        <p className="text-gold text-sm tracking-[0.3em] uppercase mb-3">
-          Maison Cavalier
-        </p>
-        <h1 className="text-cream text-3xl mb-4">Accès non autorisé</h1>
-        <p className="text-cream/70 mb-8">
-          Votre compte ne permet pas d&apos;accéder à cette section. Les
-          résidents et chauffeurs utilisent les applications mobiles dédiées.
+    <main className="flex-1 flex items-center justify-center bg-page p-6">
+      <div className="text-center max-w-md space-y-4">
+        <div className="flex justify-center"><Seal size={44} /></div>
+        <p className="text-gold-deep text-[10px] tracking-[3px] uppercase">Maison Cavalier</p>
+        <h1 className="text-[24px] text-ink">Accès non autorisé</h1>
+        <p className="text-[12.5px] text-muted leading-relaxed">
+          Votre compte ne permet pas d&apos;accéder à cette section. Les résidents et chauffeurs utilisent les applications mobiles dédiées.
         </p>
         {/* Déconnexion et non simple lien vers /login : le proxy y renverrait
             l'utilisateur connecté sur cette même page (impasse). */}
-        <form action={signOut}>
-          <button
-            type="submit"
-            className="text-gold underline underline-offset-4 cursor-pointer"
-          >
-            Se déconnecter
-          </button>
+        <form action={signOut} className="flex justify-center">
+          <Button type="submit" variant="outline" size="sm">Se déconnecter</Button>
         </form>
       </div>
     </main>

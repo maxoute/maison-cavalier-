@@ -3,13 +3,13 @@
 import { revalidatePath } from 'next/cache';
 import { staffContext, field, uuid, dateField, check } from '@/lib/operations/server';
 import { incidentLabels } from '@/lib/interventions';
+import { parseEuros } from '@/lib/catalog';
 import type { ActionResult } from '@/lib/operations/shared';
 
 async function perform(work: () => Promise<void>, success: string): Promise<ActionResult> {
   try {
     await work();
-    revalidatePath('/concierge/interventions'); revalidatePath('/concierge');
-    revalidatePath('/concierge/messagerie'); revalidatePath('/syndic');
+    revalidatePath('/concierge', 'layout'); revalidatePath('/syndic', 'layout'); revalidatePath('/admin', 'layout');
     return { success };
   } catch (error) { return { error: error instanceof Error ? error.message : 'Enregistrement impossible.' }; }
 }
@@ -19,9 +19,11 @@ export async function assignIntervention(_: ActionResult, form: FormData): Promi
     const { db, session } = await staffContext();
     const version = field(form, 'updated_at', true)!;
     if (!Number.isFinite(Date.parse(version))) throw new Error('Version invalide. Actualisez la page.');
+    const amount = field(form, 'amount', false, 20);
     const { data, error } = await db.from('service_requests').update({
       assigned_provider: field(form, 'assigned_provider', true, 200),
       estimated_completion_at: dateField(form, 'estimated_completion_at'),
+      ...(amount ? { amount_cents: parseEuros(amount) } : {}),
     }).eq('id', uuid(form, 'id')).eq('building_id', session.buildingId).eq('updated_at', version).neq('status', 'termine').select('id');
     check(error);
     if (!data?.length) throw new Error('Cette intervention a changé. Actualisez la page.');

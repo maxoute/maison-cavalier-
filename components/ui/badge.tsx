@@ -7,13 +7,13 @@ import type { ServiceType } from "@/types";
 type Tone = "gold" | "green" | "orange" | "red" | "violet" | "blue" | "grey";
 
 const tones: Record<Tone, string> = {
-  gold: "text-gold-light bg-gold/10 border-gold/40",
+  gold: "text-gold-deep bg-gold/10 border-gold/40",
   green: "text-green bg-green/10 border-green/40",
   orange: "text-orange bg-orange/10 border-orange/40",
   red: "text-red bg-red/10 border-red/40",
   violet: "text-violet bg-violet/10 border-violet/40",
   blue: "text-blue bg-blue/10 border-blue/40",
-  grey: "text-grey bg-grey/10 border-grey/40",
+  grey: "text-muted bg-grey/10 border-grey/40",
 };
 
 export function Badge({
@@ -43,13 +43,8 @@ const serviceTones: Record<ServiceType, Tone> = {
   personal_shopper: "gold",
 };
 
-export const serviceLabels: Record<ServiceType, string> = {
-  chauffeur: "Chauffeur",
-  pressing: "Pressing",
-  colis: "Colis",
-  billetterie: "Billetterie",
-  personal_shopper: "Shopper",
-};
+export { serviceLabels } from "@/lib/requests";
+import { serviceLabels } from "@/lib/requests";
 
 export const serviceColors: Record<ServiceType, string> = {
   chauffeur: "var(--blue)",

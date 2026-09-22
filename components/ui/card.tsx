@@ -30,11 +30,11 @@ export function Card({
   return (
     <div
       className={cn(
-        "relative rounded-[8px] border border-navy-3 overflow-hidden",
-        "bg-[linear-gradient(160deg,var(--navy-3),var(--navy-2)_45%)]",
-        "shadow-[0_1px_0_rgba(255,255,255,.03)_inset,0_10px_28px_-14px_rgba(0,0,0,.65)]",
+        "relative rounded-[8px] border border-line overflow-hidden",
+        "bg-surface",
+        "shadow-[0_1px_2px_rgba(10,22,40,.04),0_8px_24px_-16px_rgba(10,22,40,.18)]",
         interactive &&
-          "transition-all duration-300 ease-in-out hover:border-white/[0.14] hover:-translate-y-0.5 hover:shadow-[0_1px_0_rgba(255,255,255,.05)_inset,0_18px_38px_-16px_rgba(0,0,0,.75)]",
+          "transition-all duration-300 ease-in-out hover:border-ink/20 hover:-translate-y-0.5 hover:shadow-[0_2px_4px_rgba(10,22,40,.05),0_16px_32px_-16px_rgba(10,22,40,.22)]",
         className,
       )}
       style={style}
@@ -71,7 +71,7 @@ export function CardTitle({
   ...props
 }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h3 className={cn("text-[15px] text-cream", className)} {...props} />
+    <h3 className={cn("text-[15px] text-ink", className)} {...props} />
   );
 }
 
@@ -90,7 +90,7 @@ export function SectionLabel({
   return (
     <p
       className={cn(
-        "flex items-center gap-2 text-[10px] tracking-[1.5px] uppercase text-grey",
+        "flex items-center gap-2 text-[10px] tracking-[1.5px] uppercase text-muted",
         "before:content-[''] before:w-3 before:h-px before:bg-gold/50",
         className,
       )}

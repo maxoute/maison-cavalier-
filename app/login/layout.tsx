@@ -19,7 +19,7 @@ export default function AuthLayout({
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2.5 mb-3">
             <Seal size={38} glow />
-            <span className="font-serif text-cream text-[22px] tracking-[1px]">
+            <span className="font-serif text-ink text-[22px] tracking-[1px]">
               Maison Cavalier
             </span>
           </div>
@@ -27,7 +27,7 @@ export default function AuthLayout({
             L&apos;Immeuble Haute Couture — Plateforme
           </p>
         </div>
-        <div className="rounded-[8px] bg-[linear-gradient(160deg,var(--navy-2),var(--navy))] border border-gold/15 p-8 shadow-[0_30px_80px_rgba(0,0,0,0.55)]">
+        <div className="rounded-[8px] bg-surface border border-line p-8 shadow-[0_24px_60px_-24px_rgba(10,22,40,.25)]">
           {children}
         </div>
       </div>

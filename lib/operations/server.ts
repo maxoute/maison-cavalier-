@@ -1,7 +1,7 @@
 import 'server-only';
 import { getSession } from '@/lib/session';
 import { createClient } from '@/lib/supabase/server';
-import { parseUtcDateTime } from './dates';
+import { parseParisDateTime } from './dates';
 
 export async function staffContext() {
   const session = await getSession();
@@ -22,10 +22,17 @@ export function uuid(data: FormData, name: string) {
 export function dateField(data: FormData, name: string) {
   const value = field(data, name);
   if (!value) return null;
-  return parseUtcDateTime(value);
+  return parseParisDateTime(value);
 }
 export function check(error: { message: string; code?: string } | null) {
-  if (error) throw new Error(error.code === '23505' ? 'Cet élément existe déjà.' : 'Enregistrement impossible. Vérifiez les données et réessayez.');
+  if (!error) return;
+  if (error.code === '23505') throw new Error('Cet élément existe déjà.');
+  if (error.code === '23503') throw new Error('Opération impossible : cet élément est encore référencé par un historique.');
+  throw new Error('Enregistrement impossible. Vérifiez les données et réessayez.');
+}
+/** Variante pour les lectures : le message ne parle pas d'enregistrement. */
+export function checkRead(error: { message: string; code?: string } | null) {
+  if (error) throw new Error('Données momentanément indisponibles. Réessayez dans un instant.');
 }
 export async function residentsForStaff() {
   const { db, session } = await staffContext();

@@ -1,4 +1,5 @@
 import type { RequestStatus, ServiceType } from '@/types';
+import { formatDuration } from './format.ts';
 
 export const serviceLabels: Record<ServiceType, string> = {
   chauffeur: 'Chauffeur', pressing: 'Pressing', colis: 'Colis',
@@ -17,10 +18,19 @@ export function isRequestStatus(value: string): value is RequestStatus {
 export function isServiceType(value: string): value is ServiceType {
   return Object.prototype.hasOwnProperty.call(serviceLabels, value);
 }
+/**
+ * État SLA d'une demande : `late` dès la première seconde de dépassement,
+ * libellé humanisé (« SLA dépassé de 1 h 05 », « SLA : 42 min restantes »).
+ */
 export function requestSla(deadline: string | null, status: RequestStatus, now: number) {
   if (!deadline || status === 'termine') return null;
   const remaining = Date.parse(deadline) - now;
   if (!Number.isFinite(remaining)) return null;
   const minutes = Math.ceil(Math.abs(remaining) / 60_000);
-  return { late: remaining < 0, label: remaining < 0 ? `SLA dépassé de ${minutes} min` : `SLA : ${minutes} min restantes` };
+  const duration = formatDuration(minutes);
+  return {
+    late: remaining < 0,
+    minutes: remaining < 0 ? -minutes : minutes,
+    label: remaining < 0 ? `SLA dépassé de ${duration}` : `SLA : ${duration} restantes`,
+  };
 }

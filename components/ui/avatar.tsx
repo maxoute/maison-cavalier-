@@ -36,8 +36,8 @@ export function Avatar({
   return (
     <span
       className={cn(
-        "inline-flex items-center justify-center rounded-full shrink-0 font-medium text-cream/95",
-        "ring-1 ring-white/10",
+        "inline-flex items-center justify-center rounded-full shrink-0 font-medium text-white",
+        "ring-1 ring-ink/10",
         className,
       )}
       style={{

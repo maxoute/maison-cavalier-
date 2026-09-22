@@ -5,7 +5,9 @@ import { parseUtcDateTime } from '../lib/operations/dates.ts';
 
 test('SLA : dépassement dès la première seconde, y compris une demande non urgente', () => {
   const now = Date.parse('2026-09-17T10:00:00Z');
-  assert.deepEqual(requestSla('2026-09-17T09:59:59Z', 'en_cours', now), { late: true, label: 'SLA dépassé de 1 min' });
+  const late = requestSla('2026-09-17T09:59:59Z', 'en_cours', now);
+  assert.equal(late.late, true);
+  assert.equal(late.label, 'SLA dépassé de 1 min');
   assert.equal(requestSla('2026-09-17T10:00:01Z', 'nouveau', now).late, false);
   assert.equal(requestSla('2026-09-17T09:00:00Z', 'termine', now), null);
   assert.equal(requestSla(null, 'en_cours', now), null);
@@ -34,4 +36,17 @@ test('les horaires UTC ne dépendent pas du fuseau du serveur', () => {
     if (oldTimezone === undefined) delete process.env.TZ;
     else process.env.TZ = oldTimezone;
   }
+});
+
+test('les horaires de loge sont saisis en heure de Paris et stockés en UTC', async () => {
+  const { parseParisDateTime } = await import('../lib/operations/dates.ts');
+  assert.equal(parseParisDateTime('2026-09-17T10:30'), '2026-09-17T08:30:00.000Z'); // été : UTC+2
+  assert.equal(parseParisDateTime('2026-01-17T10:30'), '2026-01-17T09:30:00.000Z'); // hiver : UTC+1
+  assert.throws(() => parseParisDateTime('2026-02-30T10:00'), /Date invalide/);
+});
+
+test('le libellé SLA est humanisé', () => {
+  const now = Date.parse('2026-09-17T10:00:00Z');
+  assert.equal(requestSla('2026-09-17T08:55:00Z', 'en_cours', now).label, 'SLA dépassé de 1 h 05');
+  assert.equal(requestSla('2026-09-19T10:00:00Z', 'nouveau', now).label, 'SLA : 2 j restantes');
 });

@@ -33,17 +33,17 @@ export function Dialog({
         if (e.target === ref.current) onClose();
       }}
       className={cn(
-        "m-auto w-full max-w-lg rounded-[8px] bg-navy-2 border border-navy-3 text-cream p-0 shadow-xl",
-        "backdrop:bg-navy/50 backdrop:backdrop-blur-sm",
+        "m-auto w-full max-w-lg rounded-[8px] bg-surface border border-line text-ink p-0 shadow-xl",
+        "backdrop:bg-ink/40 backdrop:backdrop-blur-sm",
         className,
       )}
     >
-      <div className="px-6 py-4 border-b border-navy-3 flex items-center justify-between">
+      <div className="px-6 py-4 border-b border-line flex items-center justify-between">
         <h3 className="text-lg font-medium">{title}</h3>
         <button
           onClick={onClose}
           aria-label="Fermer"
-          className="text-grey hover:text-cream transition-colors cursor-pointer text-xl leading-none"
+          className="text-muted hover:text-ink transition-colors cursor-pointer text-xl leading-none"
         >
           ×
         </button>
