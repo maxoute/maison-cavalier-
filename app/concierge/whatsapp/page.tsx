@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Disclosure } from '@/components/ui/disclosure';
 import { Select, Textarea } from '@/components/ui/input';
 import { EmptyState, PageHeader } from '@/components/ui/page-header';
-import { openConversation, sendOperationalMessage, setConversationStatus, markConversationRead } from '@/app/actions/operations';
+import { openConversation, sendOperationalMessage, setConversationStatus, markConversationRead, simulateInboundMessage } from '@/app/actions/operations';
+import { serviceLabels } from '@/lib/requests';
 import { isWhatsAppLive } from '@/lib/whatsapp';
 import { formatDateTime, formatRelative } from '@/lib/format';
 import { cn } from '@/lib/cn';
@@ -97,11 +98,27 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ f
               <div className={cn('max-w-[78%] rounded-[12px] border px-3.5 py-2.5 shadow-[0_2px_10px_-8px_rgba(10,22,40,.25)]', outgoing ? 'bg-gradient-to-br from-gold/[0.14] to-gold/[0.05] border-gold/25 rounded-br-[3px]' : 'bg-surface border-line rounded-bl-[3px]')}>
                 <p className="text-[12.5px] text-ink whitespace-pre-wrap break-words leading-relaxed">{m.body}</p>
                 <p className={cn('mt-1 text-[10px]', m.delivery_status === 'echec' ? 'text-red' : 'text-muted')}>{outgoing ? 'Conciergerie' : selectedName} · {formatDateTime(m.created_at)}{outgoing ? ` · ${delivery}` : ''}</p>
+                {!outgoing && m.ai_analysis && <p className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[10.5px] text-muted">
+                  {m.ai_analysis.action === 'creer_demande' && m.request_id
+                    ? <Link href="/concierge" className="inline-flex items-center gap-1.5 hover:text-ink transition-colors duration-300"><Badge tone="green">Demande créée</Badge>{m.ai_analysis.service ? serviceLabels[m.ai_analysis.service] : ''}{m.ai_analysis.priority === 'urgente' ? ' · urgente' : ''}</Link>
+                    : m.ai_analysis.action === 'a_traiter' ? <Badge tone="orange">À traiter</Badge>
+                    : m.ai_analysis.action === 'erreur' ? <Badge tone="red">IA indisponible</Badge>
+                    : <Badge tone="grey">IA · aucune action</Badge>}
+                  <span>{m.ai_analysis.summary}</span>
+                </p>}
               </div>
             </article>;
           })}
           {!messages.length && <EmptyState title="Aucun message dans ce fil." description="Écrivez le premier message ci-dessous." />}
         </div>
+        {!live && <div className="border-t border-line px-4 py-2.5">
+          <Disclosure summary="Simuler un message reçu" hint="Démo : le message est analysé par l’IA, qui crée une demande si besoin">
+            <OperationForm key={`sim-${selected.id}`} action={simulateInboundMessage} submit="Recevoir le message">
+              <input type="hidden" name="id" value={selected.id} />
+              <Textarea name="body" required maxLength={4000} rows={2} placeholder={`Message de ${selectedName}…`} aria-label="Message reçu" className="text-[12.5px]" />
+            </OperationForm>
+          </Disclosure>
+        </div>}
         <div className="border-t border-line px-4 py-3">
           <OperationForm key={selected.id} action={sendOperationalMessage} primary submit={live ? 'Envoyer' : 'Simuler l’envoi'}>
             <input type="hidden" name="id" value={selected.id} />

@@ -2,7 +2,9 @@
 import { revalidatePath } from 'next/cache';
 import { staffContext, field, uuid, dateField, check } from '@/lib/operations/server';
 import { categories, type ActionResult } from '@/lib/operations/shared';
-import { getWhatsAppProvider, toE164 } from '@/lib/whatsapp';
+import { getWhatsAppProvider, isWhatsAppLive, toE164 } from '@/lib/whatsapp';
+import { triageInboundMessage } from '@/lib/whatsapp/triage';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { parseEuros, parseRate } from '@/lib/catalog';
 
 async function perform(work: () => Promise<void>, message = 'Enregistré.'): Promise<ActionResult> {
@@ -186,6 +188,35 @@ export async function sendOperationalMessage(_: ActionResult, form: FormData) {
       throw new Error('Envoi échoué. Le message reste dans l’historique.');
     }
   }, 'Envoi WhatsApp simulé ; aucun message externe envoyé.');
+}
+/**
+ * Démo tant que le compte Business n'est pas raccordé : dépose un message
+ * « reçu » dans le fil, comme le ferait le webhook, puis lance le triage LLM.
+ * Le fil est d'abord lu avec la session (RLS) : on n'écrit en service-role
+ * que dans un fil de l'immeuble actif.
+ */
+export async function simulateInboundMessage(_: ActionResult, form: FormData): Promise<ActionResult> {
+  try {
+    if (isWhatsAppLive()) throw new Error('Simulation indisponible : le compte WhatsApp est raccordé.');
+    const { db, session } = await staffContext();
+    const id = uuid(form, 'id');
+    const body = field(form, 'body', true, 4000)!;
+    const { data: conversation, error } = await db.from('conversations').select('id').eq('id', id).eq('building_id', session.buildingId).single();
+    check(error);
+    if (!conversation) throw new Error('Conversation introuvable.');
+    const { data: message, error: insertError } = await createAdminClient().from('messages').insert({
+      building_id: session.buildingId, conversation_id: id, direction: 'entrant', body,
+      external_message_id: `wamid.sim-${crypto.randomUUID()}`, delivery_status: 'livre',
+    }).select('id').single();
+    check(insertError);
+    const analysis = message ? await triageInboundMessage(message.id) : null;
+    revalidatePath('/concierge', 'layout');
+    if (!analysis) return { success: 'Message reçu (analyse IA non configurée).' };
+    const outcome = { creer_demande: 'demande créée', a_traiter: 'à traiter par la loge', aucune: 'aucune action', erreur: 'analyse indisponible' }[analysis.action];
+    return { success: `Message reçu · IA : ${outcome}.` };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'Simulation impossible.' };
+  }
 }
 export async function markConversationRead(_: ActionResult, form: FormData) {
   return perform(async () => {

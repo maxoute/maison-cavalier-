@@ -1,4 +1,6 @@
+import { after } from 'next/server';
 import { readMetaConfig } from '@/lib/whatsapp';
+import { triageInboundMessage } from '@/lib/whatsapp/triage';
 import { recordInbound } from '@/lib/whatsapp/inbound';
 import { parseWebhook, verifySignature } from '@/lib/whatsapp/webhook';
 
@@ -39,7 +41,9 @@ export async function POST(request: Request) {
   }
   const { messages, statuses } = parseWebhook(payload);
   try {
-    const report = await recordInbound(messages, statuses);
+    const { storedIds, ...report } = await recordInbound(messages, statuses);
+    // Meta attend une réponse rapide : l'analyse LLM passe après l'accusé.
+    after(async () => { for (const id of storedIds) await triageInboundMessage(id); });
     return Response.json(report);
   } catch {
     // Une erreur 5xx fait rejouer l'événement par Meta : c'est le

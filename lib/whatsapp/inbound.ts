@@ -12,6 +12,8 @@ export interface InboundReport {
   /** Messages écartés : numéro inconnu, ambigu, ou message déjà reçu. */
   ignored: number;
   updated: number;
+  /** Messages nouvellement enregistrés, à passer au triage. */
+  storedIds: string[];
 }
 
 /**
@@ -28,12 +30,12 @@ export async function recordInbound(
   statuses: InboundStatus[],
 ): Promise<InboundReport> {
   const db = createAdminClient();
-  const report: InboundReport = { stored: 0, ignored: 0, updated: 0 };
+  const report: InboundReport = { stored: 0, ignored: 0, updated: 0, storedIds: [] };
 
   for (const message of messages) {
     const thread = await resolveThread(db, message.waId);
     if (!thread) { report.ignored += 1; continue; }
-    const { error } = await db.from('messages').insert({
+    const { data: inserted, error } = await db.from('messages').insert({
       building_id: thread.buildingId,
       conversation_id: thread.conversationId,
       direction: 'entrant',
@@ -41,11 +43,12 @@ export async function recordInbound(
       external_message_id: message.externalMessageId,
       delivery_status: 'livre',
       created_at: message.receivedAt,
-    });
+    }).select('id').single();
     // 23505 : le même événement rejoué par Meta, déjà enregistré.
     if (error?.code === '23505') { report.ignored += 1; continue; }
     if (error) throw new Error('Message entrant non enregistré.');
     report.stored += 1;
+    if (inserted) report.storedIds.push(inserted.id);
   }
 
   for (const status of statuses) {

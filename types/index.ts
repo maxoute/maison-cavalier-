@@ -214,7 +214,17 @@ export interface Message {
   delivery_status: MessageDeliveryStatus;
   /** Demande créée depuis ce message : traçabilité chat → opération. */
   request_id: string | null;
+  /** Décision du triage LLM sur un message entrant (nulle tant que non analysé). */
+  ai_analysis: MessageAnalysis | null;
   created_at: string;
+}
+
+export interface MessageAnalysis {
+  action: 'creer_demande' | 'a_traiter' | 'aucune' | 'erreur';
+  service: ServiceType | null;
+  priority: RequestPriority;
+  summary: string;
+  analyzed_at: string;
 }
 
 export interface Parcel {

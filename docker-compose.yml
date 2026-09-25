@@ -23,10 +23,21 @@ services:
         NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
     restart: unless-stopped
+    # Toutes les variables de .env.production.example : celles absentes du
+    # .env restent vides, l'application bascule alors en simulation
+    # (WhatsApp) ou désactive la fonction (Gemini, rappels colis).
     environment:
       NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      CRON_SECRET: ${CRON_SECRET:-}
+      WHATSAPP_PHONE_NUMBER_ID: ${WHATSAPP_PHONE_NUMBER_ID:-}
+      WHATSAPP_ACCESS_TOKEN: ${WHATSAPP_ACCESS_TOKEN:-}
+      WHATSAPP_APP_SECRET: ${WHATSAPP_APP_SECRET:-}
+      WHATSAPP_VERIFY_TOKEN: ${WHATSAPP_VERIFY_TOKEN:-}
+      WHATSAPP_API_VERSION: ${WHATSAPP_API_VERSION:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-}
     expose:
       - "3000"
     healthcheck:
@@ -37,14 +48,18 @@ services:
     networks:
       - default
       - dokploy-network
+    # Routeur nommé `maison-cavalier-app` avec priorité explicite : il prend
+    # le pas sur l'ancien routeur `maison-cavalier-web` (compose lancé à la
+    # main avant la migration vers Dokploy) tant que celui-ci tourne encore.
     labels:
       traefik.enable: "true"
       traefik.docker.network: dokploy-network
-      traefik.http.routers.maison-cavalier-web.rule: Host(`app.maison-cavalier.com`)
-      traefik.http.routers.maison-cavalier-web.entrypoints: websecure
-      traefik.http.routers.maison-cavalier-web.service: maison-cavalier-web
-      traefik.http.routers.maison-cavalier-web.tls.certresolver: letsencrypt
-      traefik.http.services.maison-cavalier-web.loadbalancer.server.port: "3000"
+      traefik.http.routers.maison-cavalier-app.rule: Host(`app.maison-cavalier.com`)
+      traefik.http.routers.maison-cavalier-app.entrypoints: websecure
+      traefik.http.routers.maison-cavalier-app.priority: "100"
+      traefik.http.routers.maison-cavalier-app.service: maison-cavalier-app
+      traefik.http.routers.maison-cavalier-app.tls.certresolver: letsencrypt
+      traefik.http.services.maison-cavalier-app.loadbalancer.server.port: "3000"
 
 networks:
   dokploy-network:
