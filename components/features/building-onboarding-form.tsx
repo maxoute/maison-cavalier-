@@ -12,7 +12,7 @@ import type { ActionResult } from '@/lib/operations/shared';
  * concierge titulaire et, en option, l'accès syndic. Les identifiants
  * créés sont rappelés à l'écran pour une première connexion immédiate.
  */
-export function BuildingOnboardingForm({ defaultPassword }: { defaultPassword: string }) {
+export function BuildingOnboardingForm() {
   const [state, formAction, pending] = useActionState<ActionResult, FormData>(onboardBuilding, {});
 
   return (
@@ -31,30 +31,13 @@ export function BuildingOnboardingForm({ defaultPassword }: { defaultPassword: s
         <FormGroup title="Concierge titulaire">
           <FormField label="Nom complet" name="concierge_name" required maxLength={120} placeholder="Camille Rivière" />
           <FormField label="E-mail" name="concierge_email" type="email" required maxLength={160} placeholder="camille@maison-cavalier.com" />
-          <FormField
-            label="Mot de passe temporaire"
-            name="concierge_password"
-            required
-            minLength={8}
-            maxLength={72}
-            defaultValue={defaultPassword}
-            hint="8 caractères minimum · à changer à la première connexion"
-            className="sm:col-span-2"
-          />
+          <p className="text-[11px] text-muted sm:col-span-2">Invitation par e-mail : la personne choisit elle-même son mot de passe.</p>
         </FormGroup>
 
         <FormGroup title="Accès syndic (optionnel)">
           <FormField label="Cabinet / nom" name="syndic_name" maxLength={120} placeholder="Cabinet Perrin" />
           <FormField label="E-mail" name="syndic_email" type="email" maxLength={160} placeholder="contact@cabinet-perrin.fr" />
-          <FormField
-            label="Mot de passe temporaire"
-            name="syndic_password"
-            minLength={8}
-            maxLength={72}
-            defaultValue={defaultPassword}
-            hint="Lecture et messagerie uniquement — jamais les fiches résidents."
-            className="sm:col-span-2"
-          />
+          <p className="text-[11px] text-muted sm:col-span-2">Lecture et messagerie uniquement — jamais les fiches résidents.</p>
         </FormGroup>
       </fieldset>
 

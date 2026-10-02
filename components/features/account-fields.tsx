@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Input, Label, Select } from '@/components/ui/input';
 import { cn } from '@/lib/cn';
 import type { ActionResult } from '@/lib/operations/shared';
@@ -71,8 +72,39 @@ export function FormResult({ state }: { state: ActionResult }) {
         className="whitespace-pre-line rounded-[8px] border border-green/30 bg-green/[0.06] px-3.5 py-3 text-[12.5px] leading-relaxed text-ink"
       >
         {state.success}
+        {state.link && <CopyableLink link={state.link} />}
       </div>
     );
   }
   return null;
+}
+
+/** Lien d'accès à transmettre à la main, avec copie en un clic. */
+export function CopyableLink({ link }: { link: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="mt-2.5 flex flex-wrap items-center gap-2">
+      <input
+        readOnly
+        value={link}
+        aria-label="Lien d’accès"
+        onFocus={(event) => event.currentTarget.select()}
+        className="min-w-0 flex-1 rounded-[8px] border border-line bg-surface px-3 py-2 font-mono text-[11px] text-ink"
+      />
+      <button
+        type="button"
+        onClick={async () => {
+          try {
+            await navigator.clipboard.writeText(link);
+            setCopied(true);
+          } catch {
+            setCopied(false);
+          }
+        }}
+        className="shrink-0 rounded-[24px] border border-line bg-surface px-4 py-2 text-[11px] font-medium text-ink transition-colors duration-300 hover:border-grey/50 cursor-pointer"
+      >
+        {copied ? 'Copié' : 'Copier le lien'}
+      </button>
+    </div>
+  );
 }

@@ -8,7 +8,8 @@ import { IconPlus } from '@/components/ui/icons';
 import type { ActionResult } from '@/lib/operations/shared';
 
 /**
- * Création d'un compte d'accès web (PRD §6.3.3). Les options de rôle et
+ * Invitation d'un compte d'accès web (PRD §6.3.3) : la personne reçoit un
+ * lien à usage unique et choisit elle-même son mot de passe. Les options de rôle et
  * d'immeuble sont déjà restreintes au périmètre du demandeur côté serveur :
  * ce formulaire n'en est que le reflet.
  */
@@ -17,14 +18,12 @@ export function UserCreateForm({
   buildings,
   defaultBuildingId,
   buildingName,
-  defaultPassword,
 }: {
   roles: { value: string; label: string }[];
   /** Renseigné pour le super-admin uniquement ; l'admin est figé à son immeuble. */
   buildings?: { id: string; name: string }[];
   defaultBuildingId: string;
   buildingName: string;
-  defaultPassword: string;
 }) {
   const [state, formAction, pending] = useActionState<ActionResult, FormData>(createUser, {});
 
@@ -35,15 +34,6 @@ export function UserCreateForm({
           <FormField label="Nom complet" name="full_name" required maxLength={120} placeholder="Camille Rivière" />
           <FormField label="E-mail" name="email" type="email" required maxLength={160} placeholder="camille@maison-cavalier.com" />
           <FormField label="Téléphone (optionnel)" name="phone" type="tel" maxLength={30} placeholder="+33 6 12 34 56 78" />
-          <FormField
-            label="Mot de passe temporaire"
-            name="password"
-            required
-            minLength={8}
-            maxLength={72}
-            defaultValue={defaultPassword}
-            hint="8 caractères minimum · à changer à la première connexion"
-          />
         </FormGroup>
 
         <FormGroup title="Accès">
@@ -78,7 +68,7 @@ export function UserCreateForm({
       <div className="flex flex-wrap items-center gap-3">
         <Button type="submit" variant="gold" disabled={pending}>
           <IconPlus size={13} />
-          {pending ? 'Création en cours…' : 'Créer le compte'}
+          {pending ? 'Envoi en cours…' : 'Envoyer l’invitation'}
         </Button>
         <p className="text-[11px] text-muted">
           Résidents et chauffeurs n’ont pas d’accès web : ils passent par les apps mobiles.

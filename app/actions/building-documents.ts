@@ -29,6 +29,6 @@ export async function emailBuildingQuote(_: ActionResult, form: FormData): Promi
     const { error: deliveryError } = await db.from('building_document_deliveries').insert({ building_id: session.buildingId, document_id: id, recipient, external_id: delivery.id, simulated: delivery.simulated, sent_by: session.userId });
     check(deliveryError);
     revalidatePath('/concierge/documents');
-    return { success: 'Envoi email simulé et historisé. Aucun email externe envoyé.' };
+    return { success: delivery.simulated ? 'Envoi email simulé et historisé. Aucun email externe envoyé.' : `E-mail envoyé à ${recipient} et historisé.` };
   } catch (error) { return { error: error instanceof Error ? error.message : 'Envoi impossible.' }; }
 }

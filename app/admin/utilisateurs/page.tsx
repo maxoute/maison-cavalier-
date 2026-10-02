@@ -1,4 +1,5 @@
 import { UserCreateForm } from '@/components/features/user-create-form';
+import { UserAccessButton } from '@/components/features/user-access-button';
 import { UserStatusButton } from '@/components/features/user-status-button';
 import { Avatar } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -53,6 +54,8 @@ interface AuthEntry {
   email: string;
   lastSignInAt: string | null;
   disabled: boolean;
+  /** Invitation envoyée mais jamais acceptée (e-mail non confirmé). */
+  invitationPending: boolean;
 }
 
 /** Annuaire auth, paginé : e-mail, dernière connexion et état du bannissement. */
@@ -68,6 +71,7 @@ async function authDirectory(): Promise<Map<string, AuthEntry>> {
         email: user.email ?? '—',
         lastSignInAt: user.last_sign_in_at ?? null,
         disabled: Boolean(user.banned_until && Date.parse(user.banned_until) > Date.now()),
+        invitationPending: !user.email_confirmed_at,
       });
     }
     if (data.users.length < perPage) break;
@@ -98,6 +102,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
       email: auth?.email ?? '—',
       lastSignInAt: auth?.lastSignInAt ?? null,
       disabled: auth?.disabled ?? false,
+      invitationPending: auth?.invitationPending ?? false,
       buildingName: buildingNames.get(profile.building_id) ?? '—',
       // Un admin ne gère que concierges et syndics de son immeuble ; personne
       // ne se désactive soi-même. Revérifié dans l'action serveur.
@@ -211,11 +216,20 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                     {account.lastSignInAt ? formatDateTime(account.lastSignInAt) : 'Jamais'}
                   </TD>
                   <TD>
-                    <Badge tone={account.disabled ? 'red' : 'green'}>{account.disabled ? 'Désactivé' : 'Actif'}</Badge>
+                    {account.disabled ? (
+                      <Badge tone="red">Désactivé</Badge>
+                    ) : account.invitationPending ? (
+                      <Badge tone="orange">Invitation en attente</Badge>
+                    ) : (
+                      <Badge tone="green">Actif</Badge>
+                    )}
                   </TD>
                   <TD className="text-right">
                     {account.manageable ? (
-                      <div className="flex justify-end">
+                      <div className="flex flex-wrap items-start justify-end gap-2">
+                        {!account.disabled && (
+                          <UserAccessButton id={account.id} name={account.full_name} pending={account.invitationPending} />
+                        )}
                         <UserStatusButton id={account.id} name={account.full_name} active={!account.disabled} />
                       </div>
                     ) : (
@@ -230,14 +244,13 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
       </section>
 
       <section className="space-y-2.5">
-        <SectionTitle hint="Mot de passe temporaire communiqué à l’intéressé">Nouveau compte</SectionTitle>
-        <Disclosure summary="Créer un compte" hint="concierge, syndic ou gestionnaire" bodyClassName="bg-surface-2/40">
+        <SectionTitle hint="La personne reçoit un lien et choisit son mot de passe">Inviter un utilisateur</SectionTitle>
+        <Disclosure summary="Inviter un utilisateur" hint="concierge, syndic ou gestionnaire" bodyClassName="bg-surface-2/40">
           <UserCreateForm
             roles={isSuperAdmin ? roleOptions : roleOptions.filter((role) => adminManagedRoles.includes(role.value as Role))}
             buildings={isSuperAdmin ? ((buildings.data ?? []) as { id: string; name: string }[]) : undefined}
             defaultBuildingId={buildingId}
             buildingName={buildingNames.get(buildingId) ?? '—'}
-            defaultPassword="Cavalier-2026!"
           />
         </Disclosure>
         <p className="text-[10px] text-muted">

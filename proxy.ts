@@ -3,7 +3,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import { canAccess, mfaRequiredRoles, roleHome } from "@/lib/rbac";
 import type { Role } from "@/types";
 
-const PUBLIC_PATHS = ["/login", "/acces-refuse"];
+// Pages accessibles sans session : connexion, activation d'un lien d'accès
+// (invitation, réinitialisation) et demande de nouveau mot de passe.
+const PUBLIC_PATHS = ["/login", "/acces-refuse", "/auth/confirm", "/mot-de-passe-oublie"];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
