@@ -98,19 +98,21 @@ jobs:
 
       - name: Déploiement Dokploy
         run: |
-          title="${GITHUB_SHA::7} · ${GITHUB_RUN_ID}"
+          # Dokploy remplace le titre par le message du commit déployé : on
+          # suit donc le déploiement le plus récent créé après le lancement
+          # (marge d'une minute pour un éventuel décalage d'horloge ; le
+          # groupe de concurrence exclut un autre déploiement du pipeline).
+          since=$(date -u -d '-60 seconds' +%Y-%m-%dT%H:%M:%S)
           curl -fsS -X POST "$DOKPLOY_URL/api/compose.deploy" \
             -H "x-api-key: $DOKPLOY_API_KEY" -H 'Content-Type: application/json' \
-            -d "$(jq -n --arg id "$DOKPLOY_COMPOSE_ID" --arg t "$title" \
+            -d "$(jq -n --arg id "$DOKPLOY_COMPOSE_ID" --arg t "${GITHUB_SHA::7}" \
                   '{composeId: $id, title: $t, description: "GitHub Actions"}')" > /dev/null
-          echo "Déploiement « $title » lancé, attente de la fin…"
-          # Le build Docker prend quelques minutes : on suit le déploiement
-          # par son titre, unique pour ce run.
+          echo "Déploiement de ${GITHUB_SHA::7} lancé, attente de la fin…"
           for i in $(seq 1 90); do
             sleep 10
             status=$(curl -fsS "$DOKPLOY_URL/api/deployment.allByCompose?composeId=$DOKPLOY_COMPOSE_ID" \
               -H "x-api-key: $DOKPLOY_API_KEY" \
-              | jq -r --arg t "$title" '[.[] | select(.title == $t)][0].status // "en_file"')
+              | jq -r --arg s "$since" '[.[] | select(.createdAt >= $s)] | sort_by(.createdAt) | last | .status // "en_file"')
             echo "  $(date +%H:%M:%S) $status"
             case "$status" in
               done) exit 0 ;;
