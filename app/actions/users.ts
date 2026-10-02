@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { managerContext } from '@/lib/admin/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { audit, inviteAccount, sendAccessLink, type AccessDelivery } from '@/lib/auth/accounts';
 import { field } from '@/lib/operations/server';
 import type { ActionResult } from '@/lib/operations/shared';
 
@@ -10,7 +11,8 @@ import type { ActionResult } from '@/lib/operations/shared';
  * Gestion des comptes d'accès web (PRD §6.3.3).
  *
  * Résidents et chauffeurs n'ont pas d'accès web (apps mobiles) : ils ne
- * sont jamais proposés à la création. La RLS ne protège pas `auth.users`,
+ * sont jamais proposés à la création. Les comptes naissent sur invitation :
+ * la personne choisit elle-même son mot de passe via un lien à usage unique. La RLS ne protège pas `auth.users`,
  * donc chaque action revérifie le périmètre du demandeur :
  *  - super_admin : tous les immeubles, tous les rôles ;
  *  - admin : concierge et syndic de son seul immeuble ;
@@ -28,54 +30,19 @@ const BAN_FOREVER = '876000h'; // 100 ans : désactivation, réversible
 const emailPattern = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
 const uuidPattern = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 
-type AdminClient = ReturnType<typeof createAdminClient>;
-
-function accountError(message: string, code: string | undefined, mail: string) {
-  if (code === 'email_exists' || /already (been )?registered|already exists|duplicate/i.test(message)) {
-    return new Error(`Un compte existe déjà avec l’adresse ${mail}.`);
-  }
-  if (code === 'weak_password') return new Error('Mot de passe trop faible : choisissez-en un plus long.');
-  return new Error(`Création du compte ${mail} impossible : ${message}`);
-}
-
-async function createAccount(
-  admin: AdminClient,
-  input: { email: string; password: string; fullName: string; phone: string | null; role: string; buildingId: string },
-) {
-  const { data, error } = await admin.auth.admin.createUser({
-    email: input.email,
-    password: input.password,
-    email_confirm: true,
-    app_metadata: { role: input.role, building_id: input.buildingId },
-    user_metadata: { full_name: input.fullName },
-  });
-  if (error || !data?.user) throw accountError(error?.message ?? 'réponse vide du service d’authentification', error?.code, input.email);
-
-  const { error: profileError } = await admin.from('profiles').insert({
-    id: data.user.id,
-    building_id: input.buildingId,
-    role: input.role,
-    full_name: input.fullName,
-    phone: input.phone,
-  });
-  if (profileError) {
-    await admin.auth.admin.deleteUser(data.user.id).catch(() => null);
-    throw new Error(`Profil de ${input.fullName} non enregistré : ${profileError.message}`);
-  }
-  return data.user.id;
-}
-
-async function audit(
-  admin: AdminClient,
-  row: { building_id: string; actor_id: string; action: string; entity: string; entity_id: string; details: Record<string, unknown> },
-) {
-  await admin.from('audit_logs').insert(row);
-}
-
 function refreshUsers() {
   revalidatePath('/admin/utilisateurs');
   revalidatePath('/admin/immeubles');
   revalidatePath('/admin');
+}
+
+/** Restitution d'un envoi d'accès : e-mail parti, ou lien à transmettre. */
+function deliveryResult(intro: string, delivery: AccessDelivery): ActionResult {
+  if (delivery.emailed) return { success: `${intro}\nE-mail envoyé à ${delivery.email} : le lien d’activation y est.` };
+  return {
+    success: `${intro}\nL’e-mail n’est pas parti (envoi d’e-mails non configuré) : transmettez ce lien à ${delivery.email}, il ne sert qu’une fois.`,
+    link: delivery.link ?? undefined,
+  };
 }
 
 export async function createUser(_: ActionResult, form: FormData): Promise<ActionResult> {
@@ -115,30 +82,65 @@ export async function createUser(_: ActionResult, form: FormData): Promise<Actio
     const mail = field(form, 'email', true, 160)!.toLowerCase();
     if (!emailPattern.test(mail)) throw new Error(`Adresse e-mail invalide : ${mail}`);
     const phone = field(form, 'phone', false, 30);
-    const password = field(form, 'password', true, 72)!;
-    if (password.length < 8) throw new Error('Mot de passe temporaire : 8 caractères minimum.');
 
-    const userId = await createAccount(admin, { email: mail, password, fullName, phone, role, buildingId });
+    const delivery = await inviteAccount(admin, { email: mail, fullName, phone, role, buildingId, buildingName: building.name });
 
     await audit(admin, {
       building_id: buildingId,
       actor_id: session.userId,
-      action: 'create_user',
+      action: 'invite_user',
       entity: 'profiles',
-      entity_id: userId,
-      details: { email: mail, role, full_name: fullName, building: building.name },
+      entity_id: delivery.userId,
+      details: { email: mail, role, full_name: fullName, building: building.name, emailed: delivery.emailed },
     });
 
     refreshUsers();
-    return {
-      success: [
-        `Compte créé pour ${fullName} — ${roleLabel(role)} · ${building.name}.`,
-        `Identifiants · ${mail} · mot de passe ${password}`,
-        'Mot de passe temporaire : à faire changer à la première connexion.',
-      ].join('\n'),
-    };
+    return deliveryResult(`Invitation créée pour ${fullName} — ${roleLabel(role)} · ${building.name}.`, delivery);
   } catch (error) {
-    return { error: error instanceof Error ? error.message : 'Création du compte impossible.' };
+    return { error: error instanceof Error ? error.message : 'Invitation impossible.' };
+  }
+}
+
+/**
+ * Nouveau lien d'accès : renvoi de l'invitation tant qu'elle n'est pas
+ * acceptée, réinitialisation du mot de passe ensuite. Mêmes règles de
+ * périmètre que la désactivation.
+ */
+export async function sendUserAccess(id: string): Promise<ActionResult> {
+  try {
+    const { session, db } = await managerContext();
+    if (!uuidPattern.test(id)) throw new Error('Identifiant invalide.');
+    const admin = createAdminClient();
+    const { data: target, error } = await admin.from('profiles')
+      .select('id, building_id, role, full_name').eq('id', id).maybeSingle();
+    if (error) throw new Error(`Compte illisible : ${error.message}`);
+    if (!target) throw new Error('Compte introuvable.');
+    if (session.role !== 'super_admin') {
+      if (target.building_id !== session.homeBuildingId) throw new Error('Ce compte dépend d’un autre immeuble.');
+      if (!adminManagedRoles.includes(target.role)) throw new Error('Un administrateur d’immeuble ne gère que les comptes concierge et syndic.');
+    }
+    const { data: building } = await db.from('buildings').select('name').eq('id', target.building_id).maybeSingle();
+
+    const delivery = await sendAccessLink(admin, {
+      userId: target.id, fullName: target.full_name, role: target.role, buildingName: building?.name ?? 'votre immeuble',
+    });
+    await audit(admin, {
+      building_id: target.building_id,
+      actor_id: session.userId,
+      action: delivery.kind === 'invite' ? 'resend_invitation' : 'send_password_reset',
+      entity: 'profiles',
+      entity_id: target.id,
+      details: { full_name: target.full_name, emailed: delivery.emailed },
+    });
+    refreshUsers();
+    return deliveryResult(
+      delivery.kind === 'invite'
+        ? `Nouvelle invitation pour ${target.full_name} : l’ancien lien ne fonctionne plus.`
+        : `Lien de réinitialisation du mot de passe pour ${target.full_name}.`,
+      delivery,
+    );
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'Envoi du lien impossible.' };
   }
 }
 

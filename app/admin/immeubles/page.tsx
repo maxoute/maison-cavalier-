@@ -161,7 +161,7 @@ export default async function BuildingsPage() {
             hint="moins de 5 minutes, catalogue provisionné"
             bodyClassName="bg-surface-2/40"
           >
-            <BuildingOnboardingForm defaultPassword="Cavalier-2026!" />
+            <BuildingOnboardingForm />
           </Disclosure>
           <p className="text-[10px] text-muted">
             À la création, l’immeuble devient l’immeuble piloté : tarifs, modèles de notification et loge sont

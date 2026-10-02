@@ -136,15 +136,21 @@ export function PortalShell({
         )}
 
         <div className="px-3.5 py-3.5 border-t border-line/80 flex items-center gap-2.5">
-          <Avatar name={userName || "?"} size={30} />
-          <div className="min-w-0 flex-1">
-            <p className="text-[12px] text-ink truncate leading-tight">
-              {userName}
-            </p>
-            <p className="text-[9px] uppercase tracking-[1px] text-muted truncate">
-              {role ? (roleLabels[role] ?? role) : ""}
-            </p>
-          </div>
+          <Link
+            href="/compte"
+            title="Mon compte : changer de mot de passe"
+            className="flex min-w-0 flex-1 items-center gap-2.5 rounded-[8px] -m-1 p-1 hover:bg-ink/[0.03] transition-colors duration-300"
+          >
+            <Avatar name={userName || "?"} size={30} />
+            <div className="min-w-0 flex-1">
+              <p className="text-[12px] text-ink truncate leading-tight">
+                {userName}
+              </p>
+              <p className="text-[9px] uppercase tracking-[1px] text-muted truncate">
+                {role ? (roleLabels[role] ?? role) : ""}
+              </p>
+            </div>
+          </Link>
           <form action={signOut}>
             <button
               type="submit"

@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test:unit": "node --experimental-strip-types --test tests/*.test.mjs",
     "e2e:stack": "node scripts/e2e-stack.mjs",
-    "test:rls": "docker exec -i supabase_db_MAISON-CAVALIER psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f - < supabase/tests/rls.test.sql"
+    "test:rls": "docker exec -i supabase_db_MAISON-CAVALIER psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f - < supabase/tests/rls.test.sql",
+    "bootstrap:super-admin": "node --experimental-strip-types scripts/bootstrap-super-admin.mjs"
   },
   "dependencies": {
     "@pdf-lib/fontkit": "^1.1.1",
