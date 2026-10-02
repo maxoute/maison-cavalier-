@@ -1,0 +1,129 @@
+# ============================================================
+# CI/CD Maison Cavalier
+#
+# - Toute PR et tout push : lint, typage, tests unitaires, build.
+# - Push sur main (ou lancement manuel) : migrations Supabase Cloud, puis
+#   déploiement Dokploy, puis contrôle du site en ligne.
+#
+# Les migrations passent AVANT le code : elles sont additives, l'ancienne
+# version de l'app continue de tourner sur le nouveau schéma pendant le
+# déploiement. Dokploy n'a pas l'auto-deploy activé : seul ce pipeline
+# déploie, et seulement si la vérification est verte.
+#
+# Secrets du dépôt (Settings → Secrets and variables → Actions) :
+#   SUPABASE_DB_URL   chaîne de connexion Postgres du projet Supabase Cloud
+#                     (Dashboard → Connect → Session pooler, mot de passe inclus)
+#   DOKPLOY_API_KEY   jeton API Dokploy
+# Variables du dépôt :
+#   DOKPLOY_URL         https://dokploy.orra-academy.com
+#   DOKPLOY_COMPOSE_ID  identifiant du service compose « app » du projet MAISON-CAVALIER
+#   APP_URL             https://app.maison-cavalier.com
+# ============================================================
+
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Vérification
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npx tsc --noEmit
+      - run: npm run test:unit
+      - name: Build
+        run: npm run build
+        env:
+          # Valeurs factices : le build ne contacte pas Supabase, il a
+          # seulement besoin que les variables publiques soient définies.
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder
+          NEXT_TELEMETRY_DISABLED: 1
+
+  deploy:
+    name: Déploiement production
+    needs: verify
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ vars.APP_URL }}
+    # Deux déploiements ne se chevauchent jamais ; un push qui arrive pendant
+    # un déploiement attend son tour au lieu de l'annuler à mi-course.
+    concurrency:
+      group: production
+      cancel-in-progress: false
+    env:
+      DOKPLOY_URL: ${{ vars.DOKPLOY_URL }}
+      DOKPLOY_COMPOSE_ID: ${{ vars.DOKPLOY_COMPOSE_ID }}
+      DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
+      APP_URL: ${{ vars.APP_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configuration présente
+        run: |
+          missing=0
+          for name in SUPABASE_DB_URL DOKPLOY_API_KEY DOKPLOY_URL DOKPLOY_COMPOSE_ID APP_URL; do
+            if [ -z "${!name}" ]; then echo "::error::$name manquant (voir l'en-tête du workflow)"; missing=1; fi
+          done
+          exit $missing
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.109.0
+
+      - name: Migrations Supabase Cloud
+        run: |
+          supabase db push --db-url "$SUPABASE_DB_URL" --dry-run
+          supabase db push --db-url "$SUPABASE_DB_URL" --yes
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+
+      - name: Déploiement Dokploy
+        run: |
+          title="${GITHUB_SHA::7} · ${GITHUB_RUN_ID}"
+          curl -fsS -X POST "$DOKPLOY_URL/api/compose.deploy" \
+            -H "x-api-key: $DOKPLOY_API_KEY" -H 'Content-Type: application/json' \
+            -d "$(jq -n --arg id "$DOKPLOY_COMPOSE_ID" --arg t "$title" \
+                  '{composeId: $id, title: $t, description: "GitHub Actions"}')" > /dev/null
+          echo "Déploiement « $title » lancé, attente de la fin…"
+          # Le build Docker prend quelques minutes : on suit le déploiement
+          # par son titre, unique pour ce run.
+          for i in $(seq 1 90); do
+            sleep 10
+            status=$(curl -fsS "$DOKPLOY_URL/api/deployment.allByCompose?composeId=$DOKPLOY_COMPOSE_ID" \
+              -H "x-api-key: $DOKPLOY_API_KEY" \
+              | jq -r --arg t "$title" '[.[] | select(.title == $t)][0].status // "en_file"')
+            echo "  $(date +%H:%M:%S) $status"
+            case "$status" in
+              done) exit 0 ;;
+              error) echo "::error::Échec du déploiement Dokploy (journal dans le panneau Dokploy)"; exit 1 ;;
+            esac
+          done
+          echo "::error::Déploiement Dokploy non terminé après 15 minutes"; exit 1
+
+      - name: Contrôle du site en ligne
+        run: |
+          for i in $(seq 1 24); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' -m 10 "$APP_URL/login" || true)
+            if [ "$code" = 200 ]; then echo "$APP_URL/login → 200"; exit 0; fi
+            echo "  $APP_URL/login → $code, nouvel essai"; sleep 5
+          done
+          echo "::error::$APP_URL/login ne répond pas 200 après le déploiement"; exit 1
