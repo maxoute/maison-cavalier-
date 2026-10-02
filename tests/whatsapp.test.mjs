@@ -80,3 +80,61 @@ test('un même numéro est reconnu quelle que soit sa saisie', () => {
   }
   assert.equal(toE164('numéro inconnu'), null);
 });
+
+// ---------- Modèles et fenêtre de service ----------
+import { buildTemplateMessage, firstName, templateDefinitions, templateVariable } from '../lib/whatsapp/templates.ts';
+import { SERVICE_WINDOW_MS, serviceWindowClosesAt, serviceWindowOpen } from '../lib/whatsapp/window.ts';
+
+test('chaque événement résident a un modèle conforme aux règles de format de Meta', () => {
+  for (const [event, definition] of Object.entries(templateDefinitions)) {
+    assert.match(definition.name, /^[a-z0-9_]{1,512}$/, event);
+    assert.doesNotMatch(definition.body, /^\{\{\d+\}\}/, `${event} : ne doit pas commencer par une variable`);
+    assert.doesNotMatch(definition.body, /\{\{\d+\}\}\s*$/, `${event} : ne doit pas finir par une variable`);
+    assert.doesNotMatch(definition.body, /\}\}[\s.,:;!?-]*\{\{/, `${event} : variables collées`);
+    const placeholders = definition.body.match(/\{\{\d+\}\}/g) ?? [];
+    assert.equal(placeholders.length, definition.example.length, `${event} : un exemple par variable`);
+    placeholders.forEach((placeholder, index) => assert.equal(placeholder, `{{${index + 1}}}`, `${event} : variables dans l’ordre`));
+  }
+});
+
+test('les variables partent sur une seule ligne, bornées et jamais vides', () => {
+  assert.equal(templateVariable('  Coupure\n\nd’eau   demain ', 'x'), 'Coupure d’eau demain');
+  assert.equal(templateVariable('', 'votre immeuble'), 'votre immeuble');
+  assert.equal(templateVariable(undefined, 'repli'), 'repli');
+  assert.equal(templateVariable('a'.repeat(400), 'x', 50).length, 50);
+  assert.equal(firstName('Isabelle Morel'), 'Isabelle');
+  assert.equal(firstName('   '), 'Madame, Monsieur');
+});
+
+test('colis, pressing et rappel portent le prénom et l’immeuble', () => {
+  for (const event of ['colis_recu', 'pressing_pret', 'rappel_colis_non_retire']) {
+    const message = buildTemplateMessage({ event, payload: { body: 'ignoré' }, residentName: 'Isabelle Morel', buildingName: 'Le Marly' });
+    assert.equal(message.name, templateDefinitions[event].name);
+    assert.deepEqual(message.variables, ['Isabelle', 'Le Marly']);
+    assert.match(message.preview, /^Bonjour Isabelle, .*Le Marly/);
+    assert.doesNotMatch(message.preview, /\{\{/);
+  }
+});
+
+test('l’annonce urgente fusionne titre et texte, ponctuation comprise', () => {
+  const message = buildTemplateMessage({
+    event: 'annonce_urgente', payload: { title: 'Coupure d’eau', body: 'Demain de 9 h à 12 h' },
+    residentName: 'Isabelle Morel', buildingName: 'Le Marly',
+  });
+  assert.deepEqual(message.variables, ['Le Marly', 'Coupure d’eau — Demain de 9 h à 12 h.']);
+});
+
+test('un événement sans modèle WhatsApp reste une simple trace', () => {
+  assert.equal(buildTemplateMessage({ event: 'devis_envoye', payload: {}, residentName: 'A B', buildingName: 'X' }), null);
+  assert.equal(buildTemplateMessage({ event: 'toString', payload: {}, residentName: 'A B', buildingName: 'X' }), null);
+});
+
+test('la réponse libre n’est possible que 24 h après le dernier message du résident', () => {
+  const now = Date.parse('2026-10-02T12:00:00Z');
+  assert.equal(serviceWindowOpen(null, now), false);
+  assert.equal(serviceWindowOpen('pas une date', now), false);
+  assert.equal(serviceWindowOpen('2026-10-02T11:00:00Z', now), true);
+  assert.equal(serviceWindowOpen(new Date(now - SERVICE_WINDOW_MS).toISOString(), now), false);
+  assert.equal(serviceWindowClosesAt('2026-10-02T11:00:00Z', now).toISOString(), '2026-10-03T11:00:00.000Z');
+  assert.equal(serviceWindowClosesAt('2026-09-30T11:00:00Z', now), null);
+});

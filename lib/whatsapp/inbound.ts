@@ -61,6 +61,15 @@ export async function recordInbound(
       .select('id');
     if (error) throw new Error('Accusé de réception non enregistré.');
     report.updated += data?.length ?? 0;
+
+    // Même accusé pour une notification automatique (file WhatsApp).
+    const { data: notified, error: notificationError } = await db.from('notifications')
+      .update({ delivery_status: status.status })
+      .eq('external_message_id', status.externalMessageId)
+      .in('delivery_status', ['envoi', ...overwritable])
+      .select('id');
+    if (notificationError) throw new Error('Accusé de réception non enregistré.');
+    report.updated += notified?.length ?? 0;
   }
 
   return report;

@@ -9,6 +9,8 @@ import { Select, Textarea } from '@/components/ui/input';
 import { EmptyState, PageHeader } from '@/components/ui/page-header';
 import { openConversation, sendOperationalMessage, setConversationStatus, markConversationRead, simulateInboundMessage } from '@/app/actions/operations';
 import { serviceLabels } from '@/lib/requests';
+import { buildTemplateMessage } from '@/lib/whatsapp/templates';
+import { serviceWindowClosesAt } from '@/lib/whatsapp/window';
 import { isWhatsAppLive } from '@/lib/whatsapp';
 import { formatDateTime, formatRelative } from '@/lib/format';
 import { cn } from '@/lib/cn';
@@ -16,10 +18,20 @@ import type { Conversation, Message } from '@/types';
 
 const statuses: Record<string, string> = { ouverte: 'Ouverte', en_attente: 'En attente', resolue: 'Résolue' };
 const statusTone: Record<string, 'green' | 'orange' | 'grey'> = { ouverte: 'green', en_attente: 'orange', resolue: 'grey' };
-const deliveryLabels: Record<string, string> = { en_attente: 'En attente d’envoi', envoye: 'Envoyé', livre: 'Livré', lu: 'Lu', echec: 'Échec de l’envoi' };
+const deliveryLabels: Record<string, string> = { en_attente: 'En attente d’envoi', envoi: 'Envoi en cours', envoye: 'Envoyé', livre: 'Livré', lu: 'Lu', echec: 'Échec de l’envoi' };
+const automaticLabels: Record<string, string> = {
+  colis_recu: 'Colis disponible', rappel_colis_non_retire: 'Rappel colis', pressing_pret: 'Pressing prêt',
+  annonce_urgente: 'Annonce urgente', recommandation_partagee: 'Recommandation',
+};
+
+interface AutomaticMessage {
+  id: string; event: string; payload: Record<string, unknown>; sent_at: string;
+  delivery_status: string; delivery_error: string | null; external_message_id: string | null;
+}
+type TimelineEntry = { kind: 'message'; at: string; message: Message } | { kind: 'auto'; at: string; auto: AutomaticMessage };
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ fil?: string }> }) {
-  const { db, session } = await staffContext();
+  const { db, session, now } = await staffContext();
   const residents = await residentsForStaff();
   const { fil } = await searchParams;
   const { data, error } = await db.from('conversations').select('*').eq('building_id', session.buildingId).eq('channel', 'whatsapp').order('last_message_at', { ascending: false, nullsFirst: false });
@@ -27,11 +39,30 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ f
   const conversations = (data ?? []) as Conversation[];
   const selected = fil ? conversations.find(c => c.id === fil) : conversations[0];
   let messages: Message[] = [];
+  let automatic: AutomaticMessage[] = [];
+  let buildingName = '';
   if (selected) {
-    const result = await db.from('messages').select('*').eq('building_id', session.buildingId).eq('conversation_id', selected.id).order('created_at', { ascending: false }).limit(100);
+    const [result, notifications, building] = await Promise.all([
+      db.from('messages').select('*').eq('building_id', session.buildingId).eq('conversation_id', selected.id).order('created_at', { ascending: false }).limit(100),
+      // Messages automatiques (file WhatsApp) : ils s'affichent dans le fil
+      // pour que la loge sache ce que le résident a reçu sans elle.
+      db.from('notifications').select('id, event, payload, sent_at, delivery_status, delivery_error, external_message_id')
+        .eq('building_id', session.buildingId).eq('recipient_resident_id', selected.resident_id).eq('channel', 'whatsapp')
+        .not('delivery_status', 'is', null).order('sent_at', { ascending: false }).limit(50),
+      db.from('buildings').select('name').eq('id', session.buildingId).maybeSingle(),
+    ]);
     checkRead(result.error);
+    checkRead(notifications.error);
     messages = ((result.data ?? []) as Message[]).reverse();
+    automatic = (notifications.data ?? []) as AutomaticMessage[];
+    buildingName = building.data?.name ?? '';
   }
+  const timeline: TimelineEntry[] = [
+    ...messages.map(message => ({ kind: 'message' as const, at: message.created_at, message })),
+    ...automatic.map(auto => ({ kind: 'auto' as const, at: auto.sent_at, auto })),
+  ].sort((a, b) => a.at.localeCompare(b.at));
+  const lastInbound = [...messages].reverse().find(m => m.direction === 'entrant')?.created_at;
+  const windowClosesAt = serviceWindowClosesAt(lastInbound, now);
   const names = new Map(residents.map(r => [r.id, r.full_name]));
   const live = isWhatsAppLive();
   // Non lu : un message est arrivé après le dernier passage de la loge.
@@ -91,7 +122,23 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ f
           </div>
         </header>
         <div className="flex-1 space-y-2.5 overflow-y-auto px-4 py-4 max-h-[460px] bg-[radial-gradient(circle_at_top,rgba(184,146,42,.04),transparent_60%)]" aria-label="Historique des 100 derniers messages">
-          {messages.map(m => {
+          {timeline.map(entry => {
+            if (entry.kind === 'auto') {
+              const auto = entry.auto;
+              const preview = buildTemplateMessage({ event: auto.event, payload: auto.payload ?? {}, residentName: selectedName, buildingName })?.preview
+                ?? String(auto.payload?.body ?? '');
+              const status = auto.external_message_id?.startsWith('wamid.mock-') ? 'Envoi simulé' : deliveryLabels[auto.delivery_status] ?? auto.delivery_status;
+              return <article key={`auto-${auto.id}`} className="flex justify-end">
+                <div className="max-w-[78%] rounded-[12px] rounded-br-[3px] border border-dashed border-line bg-surface-2/70 px-3.5 py-2.5">
+                  <p className="mb-1 text-[9.5px] uppercase tracking-[1.2px] text-muted">Message automatique · {automaticLabels[auto.event] ?? auto.event}</p>
+                  <p className="text-[12.5px] text-ink/85 whitespace-pre-wrap break-words leading-relaxed">{preview}</p>
+                  <p className={cn('mt-1 text-[10px]', auto.delivery_status === 'echec' ? 'text-red' : 'text-muted')}>
+                    Conciergerie · {formatDateTime(auto.sent_at)} · {status}{auto.delivery_status === 'echec' && auto.delivery_error ? ` : ${auto.delivery_error}` : ''}
+                  </p>
+                </div>
+              </article>;
+            }
+            const m = entry.message;
             const outgoing = m.direction === 'sortant';
             const delivery = m.external_message_id?.startsWith('wamid.mock-') ? 'Envoi simulé' : deliveryLabels[m.delivery_status] ?? m.delivery_status;
             return <article key={m.id} className={cn('flex', outgoing ? 'justify-end' : 'justify-start')}>
@@ -109,7 +156,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ f
               </div>
             </article>;
           })}
-          {!messages.length && <EmptyState title="Aucun message dans ce fil." description="Écrivez le premier message ci-dessous." />}
+          {!timeline.length && <EmptyState title="Aucun message dans ce fil." description="Écrivez le premier message ci-dessous." />}
         </div>
         {!live && <div className="border-t border-line px-4 py-2.5">
           <Disclosure summary="Simuler un message reçu" hint="Démo : le message est analysé par l’IA, qui crée une demande si besoin">
@@ -120,6 +167,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ f
           </Disclosure>
         </div>}
         <div className="border-t border-line px-4 py-3">
+          {live && <p className={cn('mb-2 text-[11px]', windowClosesAt ? 'text-muted' : 'text-orange')}>
+            {windowClosesAt
+              ? `Réponse libre possible jusqu’au ${formatDateTime(windowClosesAt.toISOString())} (24 h après le dernier message du résident).`
+              : 'Fenêtre de 24 h fermée : WhatsApp n’accepte plus de réponse libre tant que le résident n’a pas écrit. Les messages automatiques continuent de partir.'}
+          </p>}
           <OperationForm key={selected.id} action={sendOperationalMessage} primary submit={live ? 'Envoyer' : 'Simuler l’envoi'}>
             <input type="hidden" name="id" value={selected.id} />
             <Textarea name="body" required maxLength={4000} rows={2} placeholder="Écrire au résident…" aria-label="Message" className="text-[12.5px]" />
