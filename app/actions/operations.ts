@@ -4,12 +4,17 @@ import { staffContext, field, uuid, dateField, check } from '@/lib/operations/se
 import { categories, type ActionResult } from '@/lib/operations/shared';
 import { getWhatsAppProvider, isWhatsAppLive, toE164 } from '@/lib/whatsapp';
 import { triageInboundMessage } from '@/lib/whatsapp/triage';
+import { scheduleWhatsAppFlush } from '@/lib/whatsapp/outbox';
+import { serviceWindowOpen } from '@/lib/whatsapp/window';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { parseEuros, parseRate } from '@/lib/catalog';
 
 async function perform(work: () => Promise<void>, message = 'Enregistré.'): Promise<ActionResult> {
   try {
     await work();
+    // Colis, pressing, recommandations : les triggers ont pu mettre des
+    // notifications WhatsApp en file ; elles partent après la réponse.
+    scheduleWhatsAppFlush();
     revalidatePath('/concierge', 'layout');
     revalidatePath('/syndic/documents');
     return { success: message };
@@ -89,9 +94,11 @@ export async function sendParcelReminders(): Promise<ActionResult> {
     const { db } = await staffContext();
     const { data, error } = await db.rpc('send_parcel_reminders');
     check(error);
+    scheduleWhatsAppFlush();
     revalidatePath('/concierge/colis');
     const count = typeof data === 'number' ? data : 0;
-    return { success: count === 0 ? 'Aucun rappel à envoyer.' : `${count} rappel(s) enregistré(s). Envoi simulé.` };
+    if (count === 0) return { success: 'Aucun rappel à envoyer.' };
+    return { success: `${count} rappel(s) enregistré(s). ${isWhatsAppLive() ? 'Envoi WhatsApp en cours.' : 'Envoi simulé.'}` };
   } catch (error) {
     return { error: error instanceof Error ? error.message : 'Rappels impossibles.' };
   }
@@ -156,7 +163,7 @@ export async function shareRecommendation(_: ActionResult, form: FormData) {
     const { db, session } = await staffContext();
     const { error } = await db.from('recommendation_shares').insert({ building_id: session.buildingId, recommendation_id: uuid(form, 'id'), resident_id: uuid(form, 'resident_id'), shared_by_profile_id: session.userId, channel: 'whatsapp' });
     check(error);
-  }, 'Recommandation enregistrée. Partage WhatsApp simulé.');
+  }, isWhatsAppLive() ? 'Recommandation partagée sur WhatsApp.' : 'Recommandation enregistrée. Partage WhatsApp simulé.');
 }
 export async function openConversation(_: ActionResult, form: FormData) {
   return perform(async () => {
@@ -176,6 +183,15 @@ export async function sendOperationalMessage(_: ActionResult, form: FormData) {
     const { data: resident } = await db.from('residents').select('phone').eq('id', conversation.resident_id).eq('building_id', session.buildingId).single();
     const phone = toE164(resident?.phone);
     if (!phone) throw new Error('Renseignez un numéro valide dans la fiche résident.');
+    if (isWhatsAppLive()) {
+      // Hors fenêtre de 24 h, Meta refuserait le texte libre : on le dit
+      // avant d'essayer plutôt que d'enregistrer un échec.
+      const { data: lastInbound } = await db.from('messages').select('created_at').eq('conversation_id', id)
+        .eq('building_id', session.buildingId).eq('direction', 'entrant').order('created_at', { ascending: false }).limit(1).maybeSingle();
+      if (!serviceWindowOpen(lastInbound?.created_at, Date.now())) {
+        throw new Error('Fenêtre WhatsApp fermée : le résident n’a pas écrit depuis plus de 24 h. Meta n’autorise alors que les messages automatiques validés ; appelez-le ou attendez qu’il écrive.');
+      }
+    }
     const { data: message, error: insertError } = await db.from('messages').insert({ building_id: session.buildingId, conversation_id: id, direction: 'sortant', sender_profile_id: session.userId, body, delivery_status: 'en_attente' }).select('id').single();
     check(insertError);
     if (!message) throw new Error('Message non enregistré.');
@@ -187,7 +203,7 @@ export async function sendOperationalMessage(_: ActionResult, form: FormData) {
       await db.from('messages').update({ delivery_status: 'echec' }).eq('id', message.id);
       throw new Error('Envoi échoué. Le message reste dans l’historique.');
     }
-  }, 'Envoi WhatsApp simulé ; aucun message externe envoyé.');
+  }, isWhatsAppLive() ? 'Message envoyé sur WhatsApp.' : 'Envoi WhatsApp simulé ; aucun message externe envoyé.');
 }
 /**
  * Démo tant que le compte Business n'est pas raccordé : dépose un message
