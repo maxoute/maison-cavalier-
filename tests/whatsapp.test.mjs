@@ -138,3 +138,40 @@ test('la réponse libre n’est possible que 24 h après le dernier message du r
   assert.equal(serviceWindowClosesAt('2026-10-02T11:00:00Z', now).toISOString(), '2026-10-03T11:00:00.000Z');
   assert.equal(serviceWindowClosesAt('2026-09-30T11:00:00Z', now), null);
 });
+
+// ---------- Garde-fou des destinataires (environnements de test) ----------
+import { parseAllowedRecipients, recipientAllowed } from '../lib/whatsapp/allowlist.ts';
+
+test('sans WHATSAPP_ALLOWED_RECIPIENTS, aucun destinataire n’est filtré', () => {
+  assert.equal(parseAllowedRecipients(undefined), null);
+  assert.equal(recipientAllowed('+33698765401', null), true);
+});
+
+test('la liste de test n’autorise que ses numéros, quel que soit leur format', () => {
+  const allowed = parseAllowedRecipients('06 12 34 56 78, +1 555 753 7208');
+  assert.equal(recipientAllowed('+33612345678', allowed), true);
+  assert.equal(recipientAllowed('0033612345678', allowed), true);
+  assert.equal(recipientAllowed('+15557537208', allowed), true);
+  assert.equal(recipientAllowed('+33698765401', allowed), false, 'résident de démo bloqué');
+});
+
+test('une liste sans numéro valide bloque tout envoi réel', () => {
+  for (const value of ['', 'a_remplir', ' , ']) {
+    const allowed = parseAllowedRecipients(value);
+    assert.equal(allowed.size, 0);
+    assert.equal(recipientAllowed('+33612345678', allowed), false, JSON.stringify(value));
+  }
+});
+
+// ---------- Défi de vérification du webhook ----------
+import { verifyChallenge } from '../lib/whatsapp/webhook.ts';
+
+test('le défi Meta n’exige que le jeton de vérification', () => {
+  const params = (token, mode = 'subscribe') => new URLSearchParams({ 'hub.mode': mode, 'hub.verify_token': token, 'hub.challenge': '1158201444' });
+  assert.equal(verifyChallenge(params('jeton-ok'), 'jeton-ok'), '1158201444');
+  assert.equal(verifyChallenge(params('jeton-ok'), ' jeton-ok '), '1158201444');
+  assert.equal(verifyChallenge(params('mauvais'), 'jeton-ok'), null);
+  assert.equal(verifyChallenge(params('jeton-ok', 'unsubscribe'), 'jeton-ok'), null);
+  assert.equal(verifyChallenge(params(''), undefined), null, 'sans jeton configuré, tout est refusé');
+  assert.equal(verifyChallenge(params(''), ''), null);
+});

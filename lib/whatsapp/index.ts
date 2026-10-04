@@ -1,5 +1,6 @@
 import "server-only";
 
+import { parseAllowedRecipients, recipientAllowed } from "./allowlist";
 import { readMetaConfig } from "./config";
 import { MetaWhatsAppProvider } from "./meta-provider";
 import { MockWhatsAppProvider } from "./mock-provider";
@@ -10,8 +11,27 @@ export { toE164, toWaId } from "./phone";
 export { readMetaConfig } from "./config";
 
 const config = readMetaConfig();
+const allowedRecipients = parseAllowedRecipients(process.env.WHATSAPP_ALLOWED_RECIPIENTS);
+
+/**
+ * Garde-fou des environnements de test (voir `allowlist.ts`) : seuls les
+ * envois réels sont filtrés, la simulation n'envoie rien à personne.
+ */
+function restrictRecipients(inner: WhatsAppProvider): WhatsAppProvider {
+  if (!allowedRecipients) return inner;
+  return {
+    name: inner.name,
+    send(message) {
+      if (!recipientAllowed(message.to, allowedRecipients)) {
+        return Promise.reject(new Error("Destinataire hors de WHATSAPP_ALLOWED_RECIPIENTS : envoi bloqué (environnement de test)."));
+      }
+      return inner.send(message);
+    },
+  };
+}
+
 const provider: WhatsAppProvider = config
-  ? new MetaWhatsAppProvider(config)
+  ? restrictRecipients(new MetaWhatsAppProvider(config))
   : new MockWhatsAppProvider();
 
 /**

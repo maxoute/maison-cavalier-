@@ -2,25 +2,24 @@ import { after } from 'next/server';
 import { readMetaConfig } from '@/lib/whatsapp';
 import { triageInboundMessage } from '@/lib/whatsapp/triage';
 import { recordInbound } from '@/lib/whatsapp/inbound';
-import { parseWebhook, verifySignature } from '@/lib/whatsapp/webhook';
+import { parseWebhook, verifyChallenge, verifySignature } from '@/lib/whatsapp/webhook';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
- * Webhook Meta Cloud API (PRD §6.1.1). Tant que le compte Business n'est pas
- * ouvert, la route répond 503 : aucune écriture n'est possible sans le
- * secret qui authentifie Meta.
+ * Webhook Meta Cloud API (PRD §6.1.1).
+ *
+ * GET : défi de vérification, qui ne demande que WHATSAPP_VERIFY_TOKEN — on
+ * peut donc déclarer le webhook chez Meta avant d'avoir le jeton d'accès.
+ * POST : réception ; tant que le compte n'est pas entièrement configuré, la
+ * route répond 503 : aucune écriture n'est possible sans le secret qui
+ * authentifie Meta.
  */
 export async function GET(request: Request) {
-  const config = readMetaConfig();
-  if (!config) return new Response('WhatsApp non configuré.', { status: 503 });
-  const parameters = new URL(request.url).searchParams;
-  const token = parameters.get('hub.verify_token') ?? '';
-  const challenge = parameters.get('hub.challenge') ?? '';
-  if (parameters.get('hub.mode') !== 'subscribe' || token !== config.verifyToken) {
-    return new Response('Vérification refusée.', { status: 403 });
-  }
+  if (!process.env.WHATSAPP_VERIFY_TOKEN?.trim()) return new Response('WhatsApp non configuré.', { status: 503 });
+  const challenge = verifyChallenge(new URL(request.url).searchParams, process.env.WHATSAPP_VERIFY_TOKEN);
+  if (challenge === null) return new Response('Vérification refusée.', { status: 403 });
   return new Response(challenge, { headers: { 'Content-Type': 'text/plain' } });
 }
 

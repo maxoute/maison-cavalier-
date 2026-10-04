@@ -39,6 +39,21 @@ export function verifySignature(rawBody: string, header: string | null, appSecre
   return provided.length === reference.length && timingSafeEqual(provided, reference);
 }
 
+/**
+ * Défi de vérification de Meta (GET `hub.mode=subscribe`) : renvoie le
+ * `hub.challenge` à retourner, ou `null` si la demande est refusée. Seul le
+ * jeton de vérification intervient — le webhook peut être déclaré chez Meta
+ * avant que le jeton d'accès et le secret de l'app ne soient posés.
+ */
+export function verifyChallenge(parameters: URLSearchParams, verifyToken: string | undefined): string | null {
+  const expected = verifyToken?.trim();
+  if (!expected || parameters.get('hub.mode') !== 'subscribe') return null;
+  const provided = Buffer.from(parameters.get('hub.verify_token') ?? '', 'utf8');
+  const reference = Buffer.from(expected, 'utf8');
+  if (provided.length !== reference.length || !timingSafeEqual(provided, reference)) return null;
+  return parameters.get('hub.challenge') ?? '';
+}
+
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
 }
