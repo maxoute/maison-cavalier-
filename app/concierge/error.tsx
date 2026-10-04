@@ -9,7 +9,7 @@ export default function PortalError({ error, unstable_retry }: { error: Error & 
   const [pending, startTransition] = useTransition();
   const known = error?.message && !/digest|Server Components render/i.test(error.message) ? error.message : null;
   return (
-    <Card role="alert" accent="orange" className="max-w-xl p-6 space-y-4">
+    <Card role="alert" className="max-w-xl p-6 space-y-4">
       <div className="flex items-center gap-3">
         <span className="flex items-center justify-center w-9 h-9 rounded-full bg-orange/10 text-orange shrink-0"><IconAlert size={16} /></span>
         <h1 className="text-[20px] text-ink">Une erreur est survenue</h1>

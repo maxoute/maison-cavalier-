@@ -1,13 +1,9 @@
-import { Card, SectionLabel } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/cn";
 
 type Accent = "gold" | "blue" | "green" | "orange" | "violet" | "red" | "grey";
 
-/**
- * Tuile d'indicateur : valeur en Lora, libellé en capitales espacées,
- * icône dans une pastille et barre d'accent en tête. Même gabarit sur le
- * dashboard admin, la finance, les devis, les interventions et le reporting.
- */
+/** Indicateurs sobres ; les couleurs signalent uniquement les points à surveiller. */
 export function StatCard({
   value,
   label,
@@ -24,15 +20,15 @@ export function StatCard({
   className?: string;
 }) {
   return (
-    <Card accent={accent} className={cn("p-4", className)}>
+    <Card className={cn("p-5", className)}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="font-serif text-ink text-[24px] leading-none truncate">{value}</p>
-          <SectionLabel className="mt-2 text-[9px]">{label}</SectionLabel>
-          {hint && <p className="mt-1.5 text-[11px] text-muted">{hint}</p>}
+          <p className="font-serif text-ink text-[30px] leading-tight tabular-nums break-words">{value}</p>
+          <p className="mt-2 text-sm text-ink/80">{label}</p>
+          {hint && <p className={cn("mt-2 text-xs leading-relaxed", accent === "red" ? "text-red" : accent === "orange" ? "text-orange" : "text-muted")}>{hint}</p>}
         </div>
         {Icon && (
-          <span className="flex items-center justify-center w-8 h-8 rounded-full bg-gold/10 text-gold-deep shrink-0">
+          <span className="flex items-center justify-center w-8 h-8 rounded-[8px] bg-ink/[0.04] text-muted shrink-0">
             <Icon size={15} />
           </span>
         )}
@@ -42,7 +38,7 @@ export function StatCard({
 }
 
 export function StatGrid({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={cn("grid grid-cols-2 lg:grid-cols-4 gap-3", className)}>{children}</div>;
+  return <div className={cn("grid grid-cols-1 min-[400px]:grid-cols-2 xl:grid-cols-4 gap-4", className)}>{children}</div>;
 }
 
 /** Barre de progression fine, or par défaut. */

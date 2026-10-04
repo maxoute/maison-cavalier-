@@ -1,8 +1,7 @@
 import { cn } from "@/lib/cn";
 import type { ServiceType } from "@/types";
 
-/* Badge du prototype : pill uppercase 9px, fond couleur à 10 %,
-   bordure couleur à 33 %. */
+/* Statuts lisibles : libellé explicite et couleur sémantique. */
 
 type Tone = "gold" | "green" | "orange" | "red" | "violet" | "blue" | "grey";
 
@@ -17,7 +16,7 @@ const tones: Record<Tone, string> = {
 };
 
 export function Badge({
-  tone = "gold",
+  tone = "grey",
   className,
   ...props
 }: React.HTMLAttributes<HTMLSpanElement> & { tone?: Tone }) {
@@ -25,7 +24,7 @@ export function Badge({
     <span
       className={cn(
         "inline-flex items-center rounded-[20px] border px-2 py-[3px]",
-        "text-[9px] font-medium uppercase tracking-[1.2px]",
+        "text-[11px] font-medium leading-normal",
         tones[tone],
         className,
       )}

@@ -11,8 +11,8 @@
 # déploie, et seulement si la vérification est verte.
 #
 # Secrets du dépôt (Settings → Secrets and variables → Actions) :
-#   SUPABASE_DB_URL   chaîne de connexion Postgres du projet Supabase Cloud
-#                     (Dashboard → Connect → Session pooler, mot de passe inclus)
+#   SUPABASE_DB_URL   chaîne de connexion Postgres du projet Supabase Cloud,
+#                     requise dès qu'un commit contient une migration
 #   DOKPLOY_API_KEY   jeton API Dokploy
 # Variables du dépôt :
 #   DOKPLOY_URL         https://dokploy.orra-academy.com
@@ -37,6 +37,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -74,11 +76,13 @@ jobs:
       APP_URL: ${{ vars.APP_URL }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - name: Configuration présente
         run: |
           missing=0
-          for name in SUPABASE_DB_URL DOKPLOY_API_KEY DOKPLOY_URL DOKPLOY_COMPOSE_ID APP_URL; do
+          for name in DOKPLOY_API_KEY DOKPLOY_URL DOKPLOY_COMPOSE_ID APP_URL; do
             if [ -z "${!name}" ]; then echo "::error::$name manquant (voir l'en-tête du workflow)"; missing=1; fi
           done
           exit $missing
@@ -91,6 +95,14 @@ jobs:
 
       - name: Migrations Supabase Cloud
         run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            if git diff --quiet HEAD^ HEAD -- supabase/migrations; then
+              echo "SUPABASE_DB_URL absent et aucune migration dans ce commit : étape ignorée."
+              exit 0
+            fi
+            echo "::error::SUPABASE_DB_URL est requis car ce commit contient une migration."
+            exit 1
+          fi
           supabase db push --db-url "$SUPABASE_DB_URL" --dry-run
           supabase db push --db-url "$SUPABASE_DB_URL" --yes
         env:

@@ -1,0 +1,27 @@
+.welcome { margin-bottom: 36px; }
+.welcome h1 { font-size: clamp(32px, 3vw, 40px); line-height: 1.2; letter-spacing: -.035em; }
+.welcome p { margin-top: 16px; font-size: 15px; line-height: 1.8; color: var(--muted); }
+.login .label { margin-bottom: 10px; color: var(--ink); font-size: 14px; text-transform: none; letter-spacing: 0; }
+.login .field { min-height: 54px; padding: 14px 16px; font-size: 16px; border-color: #d6d5d0; }
+.login .field::placeholder { color: #777e89; }
+.login .field:focus { border-color: var(--navy); outline: 2px solid #0a162820; outline-offset: 2px; box-shadow: none; }
+.password { position: relative; }
+.password .field { padding-right: 56px; }
+.reveal { position: absolute; top: 5px; right: 5px; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 6px; color: var(--muted); cursor: pointer; }
+.reveal:hover { background: var(--surface-2); color: var(--ink); }
+.recovery { margin-top: 12px; text-align: right; font-size: 13px; }
+.recovery a { color: #505d70; text-underline-offset: 4px; }
+.recovery a:hover { text-decoration: underline; color: var(--navy); }
+.submit { width: 100%; min-height: 52px; border-radius: 24px; padding: 14px 20px; background: var(--gold); color: var(--navy); font-size: 15px; font-weight: 500; cursor: pointer; transition: background .25s; }
+.submit:hover { background: #c5a044; }
+.submit:disabled { opacity: .65; cursor: wait; }
+.help { margin-top: 34px; padding-top: 26px; border-top: 1px solid var(--line); font-size: 13px; line-height: 1.8; }
+.help p:first-child { color: var(--ink); margin-bottom: 5px; }
+.help p:last-child { color: var(--muted); }
+.error { padding: 12px 14px; border-radius: 8px; color: var(--red); background: #b9452f08; font-size: 14px; line-height: 1.6; }
+.login :focus-visible { outline: 2px solid var(--navy); outline-offset: 3px; }
+.demo { margin-top: 26px; }
+.demo summary { color: var(--muted); font-size: 13px; padding: 8px 0; }
+.demo summary::before { border-color: currentColor; }
+.demo[open] summary { margin-bottom: 12px; }
+@media (prefers-reduced-motion: reduce) { .submit { transition: none; } }

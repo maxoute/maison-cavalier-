@@ -8,7 +8,7 @@ import { IconAlert } from '@/components/ui/icons';
 export default function SyndicError({ unstable_retry }: { unstable_retry: () => void }) {
   const [pending, startTransition] = useTransition();
   return (
-    <Card role="alert" accent="orange" className="max-w-xl p-6 space-y-4">
+    <Card role="alert" className="max-w-xl p-6 space-y-4">
       <div className="flex items-center gap-3">
         <span className="flex items-center justify-center w-9 h-9 rounded-full bg-orange/10 text-orange shrink-0"><IconAlert size={16} /></span>
         <h1 className="text-[20px] text-ink">Une erreur est survenue</h1>

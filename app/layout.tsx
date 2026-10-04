@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
-import { Lora, Poppins } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-const lora = Lora({
+const lora = localFont({
+  src: "../public/fonts/Lora.ttf",
   variable: "--font-lora",
-  subsets: ["latin"],
+  display: "swap",
 });
 
-const poppins = Poppins({
+const poppins = localFont({
+  src: "../public/fonts/Poppins-Regular.ttf",
   variable: "--font-poppins",
-  weight: ["300", "400", "500", "600"],
-  subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {

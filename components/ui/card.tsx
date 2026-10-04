@@ -1,30 +1,13 @@
 import { cn } from "@/lib/cn";
 
-type Accent = "gold" | "blue" | "green" | "orange" | "violet" | "red" | "grey";
-
-const accentColor: Record<Accent, string> = {
-  gold: "var(--gold)",
-  blue: "var(--blue)",
-  green: "var(--green)",
-  orange: "var(--orange)",
-  violet: "var(--violet)",
-  red: "var(--red)",
-  grey: "var(--grey)",
-};
-
-/**
- * Carte du prototype, enrichie : dégradé subtil de profondeur, liseré
- * intérieur, barre d'accent optionnelle en tête, lift au survol.
- */
+/** Surface commune : hiérarchie par le contenu, sans bandeau décoratif. */
 export function Card({
   className,
-  accent,
   interactive,
   style,
   children,
   ...props
 }: React.HTMLAttributes<HTMLDivElement> & {
-  accent?: Accent;
   interactive?: boolean;
 }) {
   return (
@@ -32,23 +15,14 @@ export function Card({
       className={cn(
         "relative rounded-[8px] border border-line overflow-hidden",
         "bg-surface",
-        "shadow-[0_1px_2px_rgba(10,22,40,.04),0_8px_24px_-16px_rgba(10,22,40,.18)]",
+        "shadow-[0_1px_3px_rgba(10,22,40,.035)]",
         interactive &&
-          "transition-all duration-300 ease-in-out hover:border-ink/20 hover:-translate-y-0.5 hover:shadow-[0_2px_4px_rgba(10,22,40,.05),0_16px_32px_-16px_rgba(10,22,40,.22)]",
+          "transition-colors duration-200 hover:border-ink/20",
         className,
       )}
       style={style}
       {...props}
     >
-      {accent && (
-        <span
-          aria-hidden
-          className="absolute inset-x-0 top-0 h-[3px]"
-          style={{
-            background: `linear-gradient(90deg, transparent, ${accentColor[accent]}, transparent)`,
-          }}
-        />
-      )}
       {children}
     </div>
   );
@@ -71,7 +45,7 @@ export function CardTitle({
   ...props
 }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h3 className={cn("text-[15px] text-ink", className)} {...props} />
+    <h3 className={cn("text-[18px] text-ink", className)} {...props} />
   );
 }
 
@@ -82,7 +56,7 @@ export function CardContent({
   return <div className={cn("px-5 pb-4", className)} {...props} />;
 }
 
-/** Étiquette de section du prototype : uppercase, espacée, grise, avec tiret repère. */
+/** Repère de section lisible, sans ornement. */
 export function SectionLabel({
   className,
   ...props
@@ -90,8 +64,7 @@ export function SectionLabel({
   return (
     <p
       className={cn(
-        "flex items-center gap-2 text-[10px] tracking-[1.5px] uppercase text-muted",
-        "before:content-[''] before:w-3 before:h-px before:bg-gold/50",
+        "text-sm font-medium text-ink",
         className,
       )}
       {...props}

@@ -117,8 +117,8 @@ summary::before {
   width: 6px;
   height: 6px;
   margin-right: 10px;
-  border-right: 1.5px solid var(--gold);
-  border-bottom: 1.5px solid var(--gold);
+  border-right: 1.5px solid var(--muted);
+  border-bottom: 1.5px solid var(--muted);
   transform: rotate(-45deg) translateY(-1px);
   transition: transform 0.25s ease;
 }

@@ -20,7 +20,7 @@ export default async function ConciergeDashboard() {
   const order: ServiceType[] = ['chauffeur', 'pressing', 'colis', 'billetterie', 'personal_shopper'];
   services.sort((a, b) => order.indexOf(a.service) - order.indexOf(b.service));
   return <div className="space-y-5 fade-up">
-    <PageHeader title="Demandes" subtitle="Tableau de bord opérationnel en temps réel : Nouveau · En cours · En attente · Terminé. Le minuteur SLA passe au rouge dès le dépassement." />
+    <PageHeader title="Demandes" subtitle="Les demandes de vos résidents, de leur réception à leur réalisation." />
     <Disclosure summary="Nouvelle demande" hint="Créée en loge ou reçue via WhatsApp">
       <div className="max-w-2xl"><OperationForm action={createRequest} primary submit="Créer la demande">
         <div className="grid gap-3 sm:grid-cols-2">

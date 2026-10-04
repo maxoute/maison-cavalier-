@@ -186,7 +186,7 @@ export default async function SyndicReportingPage({
             </Card>
 
             <div className="space-y-3">
-              <Card className="p-4" accent={report.incidents.grave > 0 ? 'red' : 'grey'}>
+              <Card className="p-4">
                 <SectionLabel className="text-[9px]">Incidents et suivi</SectionLabel>
                 <p className="mt-2.5 font-serif text-ink text-[22px] leading-none">
                   {report.incidents.resolved}/{report.incidents.total}

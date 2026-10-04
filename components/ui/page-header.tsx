@@ -18,8 +18,8 @@ export function PageHeader({
   return (
     <div className={cn("flex flex-wrap items-start justify-between gap-4", className)}>
       <div className="min-w-0">
-        <h1 className="text-[26px] leading-tight text-ink">{title}</h1>
-        {subtitle && <p className="mt-1 text-[12px] text-muted leading-relaxed max-w-2xl">{subtitle}</p>}
+        <h1 className="text-[30px] sm:text-[34px] leading-tight tracking-[-0.025em] text-ink">{title}</h1>
+        {subtitle && <p className="mt-2 text-sm text-muted leading-relaxed max-w-2xl">{subtitle}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2 shrink-0">{actions}</div>}
     </div>
@@ -38,8 +38,8 @@ export function SectionTitle({
 }) {
   return (
     <div className={cn("flex flex-wrap items-baseline justify-between gap-2", className)}>
-      <h2 className="text-[17px] text-ink">{children}</h2>
-      {hint && <p className="text-[11px] text-muted">{hint}</p>}
+      <h2 className="text-[21px] text-ink">{children}</h2>
+      {hint && <p className="text-xs text-muted">{hint}</p>}
     </div>
   );
 }
@@ -63,8 +63,8 @@ export function EmptyState({
         className,
       )}
     >
-      <p className="text-[13px] text-ink">{title}</p>
-      {description && <p className="mt-1 text-[11.5px] text-muted">{description}</p>}
+      <p className="text-base text-ink">{title}</p>
+      {description && <p className="mt-1 text-sm text-muted">{description}</p>}
       {action && <div className="mt-4 flex justify-center">{action}</div>}
     </div>
   );

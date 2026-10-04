@@ -93,6 +93,7 @@ export function PortalShell({
       )}
 
       <aside
+        aria-label="Navigation principale"
         className={`w-[236px] shrink-0 border-r border-line bg-surface flex flex-col
           fixed inset-y-0 left-0 z-40 transition-[transform,visibility] duration-300 ease-out
           md:sticky md:top-0 md:h-screen md:z-auto md:translate-x-0 md:visible
@@ -101,7 +102,7 @@ export function PortalShell({
         <div className="hidden md:flex px-5 py-5 items-center gap-2.5 border-b border-line/80">
           <Seal size={32} />
           <div className="min-w-0">
-            <p className="font-serif text-ink text-[14px] leading-tight truncate">
+            <p className="font-serif text-ink text-base leading-tight truncate">
               Maison Cavalier
             </p>
             <p className="text-[9px] uppercase tracking-[1.5px] text-gold-deep/80 truncate">
@@ -114,12 +115,12 @@ export function PortalShell({
 
         {secondaryNav.length > 0 && (
           <div className="px-3 pb-2 pt-1 border-t border-line/60">
-            <p className="px-3 pt-2 pb-1 text-[9px] uppercase tracking-[1.5px] text-muted">Autres espaces</p>
+            <p className="px-3 pt-3 pb-1 text-xs font-medium text-muted">Autres espaces</p>
             {secondaryNav.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex items-center gap-2.5 rounded-[8px] px-3 py-2 text-[12px] text-muted hover:text-ink hover:bg-ink/[0.03] transition-colors duration-300"
+                className="flex items-center gap-2.5 rounded-[8px] px-3 py-2.5 text-sm text-muted hover:text-ink hover:bg-ink/[0.03] transition-colors duration-300"
               >
                 {item.icon && <span className="shrink-0 [&>svg]:block">{item.icon}</span>}
                 <span className="truncate flex-1">{item.label}</span>
@@ -143,10 +144,10 @@ export function PortalShell({
           >
             <Avatar name={userName || "?"} size={30} />
             <div className="min-w-0 flex-1">
-              <p className="text-[12px] text-ink truncate leading-tight">
+              <p className="text-sm text-ink truncate leading-tight">
                 {userName}
               </p>
-              <p className="text-[9px] uppercase tracking-[1px] text-muted truncate">
+              <p className="mt-1 text-xs text-muted truncate">
                 {role ? (roleLabels[role] ?? role) : ""}
               </p>
             </div>
@@ -165,7 +166,7 @@ export function PortalShell({
       </aside>
 
       <div className="flex-1 min-w-0 flex flex-col">
-        <main className="flex-1 px-4 py-5 sm:px-6 md:px-8 md:py-7 max-w-[1180px] w-full mx-auto">
+        <main className="flex-1 px-4 py-6 sm:px-6 md:px-10 md:py-9 max-w-[1280px] w-full mx-auto">
           {children}
         </main>
       </div>

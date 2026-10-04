@@ -18,7 +18,7 @@ export function THead({
   return (
     <thead
       className={cn(
-        "text-muted uppercase text-[10px] tracking-[1.5px] border-b border-line",
+        "bg-surface-2/60 text-muted text-xs border-b border-line",
         className,
       )}
       {...props}
@@ -46,12 +46,12 @@ export function TH({
   className,
   ...props
 }: React.ThHTMLAttributes<HTMLTableCellElement>) {
-  return <th className={cn("px-4 py-3 font-medium", className)} {...props} />;
+  return <th className={cn("px-4 py-3.5 font-medium", className)} {...props} />;
 }
 
 export function TD({
   className,
   ...props
 }: React.TdHTMLAttributes<HTMLTableCellElement>) {
-  return <td className={cn("px-4 py-3", className)} {...props} />;
+  return <td className={cn("px-4 py-3.5", className)} {...props} />;
 }
