@@ -14,10 +14,10 @@ import {
 import type { Building } from "@/types";
 
 const nav: NavItem[] = [
-  { href: "/admin", label: "Tableau de bord", icon: <IconGrid size={15} /> },
-  { href: "/admin/immeubles", label: "Immeubles", icon: <IconBuilding size={15} /> },
-  { href: "/admin/utilisateurs", label: "Utilisateurs", icon: <IconUsers size={15} /> },
-  { href: "/admin/services", label: "Services & tarifs", icon: <IconTag size={15} /> },
+  { href: "/admin", label: "Accueil", icon: <IconGrid size={17} />, mobile: true },
+  { href: "/admin/immeubles", label: "Immeubles", icon: <IconBuilding size={17} />, mobile: true },
+  { href: "/admin/utilisateurs", label: "Utilisateurs", icon: <IconUsers size={17} />, mobile: true },
+  { href: "/admin/services", label: "Services", icon: <IconTag size={17} />, mobile: true },
   { href: "/admin/finance", label: "Finance", icon: <IconCoin size={15} /> },
 ];
 

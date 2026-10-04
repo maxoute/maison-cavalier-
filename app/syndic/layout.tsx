@@ -4,9 +4,9 @@ import { getSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 
 const nav: NavItem[] = [
-  { href: "/syndic", label: "Messagerie", icon: <IconChat size={15} /> },
-  { href: "/syndic/documents", label: "Documents", icon: <IconDoc size={15} /> },
-  { href: "/syndic/reporting", label: "Reporting", icon: <IconChart size={15} /> },
+  { href: "/syndic", label: "Messages", icon: <IconChat size={17} />, mobile: true },
+  { href: "/syndic/documents", label: "Documents", icon: <IconDoc size={17} />, mobile: true },
+  { href: "/syndic/reporting", label: "Reporting", icon: <IconChart size={17} />, mobile: true },
 ];
 
 export default async function SyndicLayout({

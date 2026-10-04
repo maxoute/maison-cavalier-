@@ -24,13 +24,13 @@ import type { Building } from "@/types";
 // traverser la frontière Server → Client Component (SidebarNav), un
 // élément React déjà rendu le peut.
 const nav: NavItem[] = [
-  { href: "/concierge", label: "Demandes", icon: <IconGrid size={15} /> },
+  { href: "/concierge", label: "Demandes", icon: <IconGrid size={17} />, mobile: true },
   { href: "/concierge/interventions", label: "Interventions", icon: <IconTool size={15} /> },
-  { href: "/concierge/colis", label: "Colis", icon: <IconPackage size={15} /> },
+  { href: "/concierge/colis", label: "Colis", icon: <IconPackage size={17} />, mobile: true },
   { href: "/concierge/pressing", label: "Pressing", icon: <IconShirt size={15} /> },
   { href: "/concierge/live-map", label: "Live Map", icon: <IconMap size={15} /> },
-  { href: "/concierge/residents", label: "Résidents", icon: <IconUsers size={15} /> },
-  { href: "/concierge/whatsapp", label: "WhatsApp", icon: <IconPhone size={15} /> },
+  { href: "/concierge/residents", label: "Résidents", icon: <IconUsers size={17} />, mobile: true },
+  { href: "/concierge/whatsapp", label: "Messages", icon: <IconPhone size={17} />, mobile: true },
   { href: "/concierge/devis", label: "Devis", icon: <IconTag size={15} /> },
   { href: "/concierge/recommandations", label: "Recommandations", icon: <IconStar size={15} /> },
   { href: "/concierge/annonces", label: "Annonces", icon: <IconAnnounce size={15} /> },
